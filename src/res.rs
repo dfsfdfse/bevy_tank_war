@@ -79,6 +79,8 @@ pub const GAME_SIZE: Vec2 = Vec2::new(630., 630.);
 pub const GAME_BLOCK_SIZE: (usize, usize) = (24, 24);
 pub const GAME_LOGO_SIZE: (f32, f32) = (450., 120.);
 pub const GAME_MENU_TEXT_SIZE: f32 = 22.0;
+pub const GAME_ICON_ARROW_LEFT: &'static str = "\u{e7f9}";
+pub const GAME_ICON_ARROW_DOWN: &'static str = "\u{e873}";
 /* ---------------Const--------------- */
 
 /* -----------Resource--------------- */
