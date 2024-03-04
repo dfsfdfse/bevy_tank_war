@@ -130,7 +130,6 @@ impl GameMap {
         for (r, row) in self.map.iter().enumerate() {
             for (c, block) in row.iter().enumerate() {
                 if stick.contains(&(r, c)) {
-                    println!("in");
                     stick.retain(|(sy, sx)| !(*sy == r && *sx == c));
                 } else if [3, 4, 5, 6, 7].contains(block) {
                     blocks.push(Block::new(r, c, *block, (2, 2)));
@@ -143,10 +142,7 @@ impl GameMap {
             }
         }
         if stick.len() > 0 {
-            println!("map error!");
-        }
-        for block in blocks.iter() {
-            println!("{:?}", block);
+            println!("map data error!");
         }
         blocks
     }
