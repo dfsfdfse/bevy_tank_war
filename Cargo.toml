@@ -1,0 +1,28 @@
+[package]
+name = "bevy_tank"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+bevy = { version = "0.13", default-features = false, features = [
+    "bevy_winit",
+    "bevy_sprite",
+    "bevy_text",
+    "png",
+    "bevy_gizmos"
+]}
+interpolation = "0.3"
+bevy_asset_loader = { version = "0.20", features = ["2d", "standard_dynamic_assets"] }
+serde_ron ={ version = "0.8", package = "ron"}
+serde = { version = "1" }
+thiserror = "1.0"
+[features]
+default = ["bevy_sprite", "bevy_ui", "bevy_text"]
+# Enable built-in lenses for Bevy sprites
+bevy_sprite = ["bevy/bevy_sprite", "bevy/bevy_render"]
+# Enable built-in lenses for Bevy UI
+bevy_ui = ["bevy/bevy_ui", "bevy/bevy_render"]
+# Enable built-in lenses for Bevy Text
+bevy_text = ["bevy/bevy_text", "bevy/bevy_render", "bevy/bevy_sprite"]
