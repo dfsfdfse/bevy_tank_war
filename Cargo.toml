@@ -9,10 +9,12 @@ edition = "2021"
 bevy = { version = "0.13", default-features = false, features = [
     "bevy_winit",
     "bevy_sprite",
-    "bevy_text",
+    "bevy_ui",
     "png",
+    "default_font",
     "bevy_gizmos"
 ]}
+idgenerator = "2.0.0"
 interpolation = "0.3"
 bevy_asset_loader = { version = "0.20", features = ["2d", "standard_dynamic_assets"] }
 serde_ron ={ version = "0.8", package = "ron"}

@@ -7,7 +7,7 @@ use crate::{
 
 use super::{
     class::game_class::{class_sprite_block, class_sprite_panel, class_sprite_sheet_block},
-    widget::wd_block,
+    widget::wd_sprite_block,
 };
 
 pub fn setup_ui_game(
@@ -24,7 +24,7 @@ pub fn setup_ui_game(
                     block.clone(),
                 );
             } else if [3, 4, 5].contains(&block.block) {
-                wd_block(gc, block, ());
+                wd_sprite_block(gc, block, ());
             } else {
                 sprite(class_sprite_block, gc, block.clone());
             }

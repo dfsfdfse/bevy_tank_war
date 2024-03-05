@@ -196,6 +196,23 @@ pub struct AniText {
     pub color: Color,
 }
 
+impl AniText {
+    pub fn set_text(&mut self, text: impl Into<String>) -> &mut Self {
+        self.text = text.into();
+        self
+    }
+
+    pub fn set_font_size(&mut self, font_size: f32) -> &mut Self {
+        self.font_size = font_size;
+        self
+    }
+
+    pub fn set_color(&mut self, color: Color) -> &mut Self {
+        self.color = color;
+        self
+    }
+}
+
 impl Default for AniText {
     fn default() -> Self {
         Self {
@@ -206,13 +223,25 @@ impl Default for AniText {
     }
 }
 
-impl Animate<Text> for AniText{
+impl Animate<Text> for Vec<AniText> {
     fn copy_from(&mut self, other: &Text) {
-        if let Some(section) = other.sections.first() {
-            self.text = section.value.clone();
-            self.font_size = section.style.font_size;
-            self.color = section.style.color;
+        for i in 0..self.len() {
+            self[i].text = other.sections[i].value.clone();
+            self[i].font_size = other.sections[i].style.font_size;
+            self[i].color = other.sections[i].style.color;
         }
+        for i in self.len()..other.sections.len() {
+            self.push(AniText::default());
+            self[i].text = other.sections[i].value.clone();
+            self[i].font_size = other.sections[i].style.font_size;
+            self[i].color = other.sections[i].style.color;
+        }
+        /* for (index, section) in other.sections.iter().enumerate() {
+            self[index] = AniText::default();
+            self[index].text = section.value.clone();
+            self[index].font_size = section.style.font_size;
+            self[index].color = section.style.color;
+        } */
     }
 }
 
@@ -258,7 +287,7 @@ pub struct Animation {
     change_sprite: AniSprite,
     change_style: AniStyle,
     change_transform: AniTransform,
-    change_text: AniText,
+    change_text: Vec<AniText>,
     ease_method: EaseMethod,
     retain_change: bool,
 }
@@ -281,7 +310,7 @@ fn lerp_color(start: Color, change: Color, ratio: f32) -> Color {
         s.z + c.z * ratio,
         s.w + c.w * ratio,
     ) */
-    start +  change * ratio
+    start + change * ratio
 }
 
 fn lerp_val(start: Val, change: Val, ratio: f32) -> Val {
@@ -423,26 +452,9 @@ impl Animation {
         self
     }
 
-    pub fn set_text(&mut self, text: String, font_size: f32, color: Color) -> &mut Self {
-        self.change_text.text = text;
-        self.change_text.font_size = font_size;
-        self.change_text.color = color;
-        self
-    }
-
-    pub fn set_text_value(&mut self, text: String) -> &mut Self {
-        self.change_text.text = text;
-        self
-    }
-
-    pub fn set_text_font_size(&mut self, font_size: f32) -> &mut Self {
-        self.change_text.font_size = font_size;
-        self
-    }
-
-    pub fn set_text_color(&mut self, color: Color) -> &mut Self {
-        self.change_text.color = color;
-        self
+    pub fn add_text(&mut self) -> &mut AniText {
+        self.change_text.push(AniText::default());
+        self.change_text.last_mut().unwrap()
     }
 }
 
@@ -454,7 +466,7 @@ pub struct Animator {
     start_sprite: AniSprite,
     start_style: AniStyle,
     start_transform: AniTransform,
-    start_text: AniText,
+    start_text: Vec<AniText>,
     init_sprite: bool,
     init_transform: bool,
     init_style: bool,
@@ -472,7 +484,7 @@ impl Default for Animator {
             start_sprite: AniSprite::default(),
             start_style: AniStyle::default(),
             start_transform: AniTransform::default(),
-            start_text: AniText::default(),
+            start_text: Vec::new(),
             init_sprite: true,
             init_transform: true,
             init_style: true,
@@ -518,7 +530,7 @@ impl Animator {
     fn tick_sprite(&mut self, sprite: &mut Sprite) {
         if self.init_sprite {
             self.start_sprite.copy_from(sprite);
-            self.init_sprite = false; 
+            self.init_sprite = false;
         }
         if let Some(animation) = self.animations.get_mut(self.exec_index) {
             let ratio = animation.ease_method.tick(animation.timer.progress);
@@ -605,19 +617,17 @@ impl Animator {
         }
         if let Some(animation) = self.animations.get_mut(self.exec_index) {
             let ratio = animation.ease_method.tick(animation.timer.progress);
-            if let Some(section) = text.sections.first_mut() {
-                if animation.change_text.text != section.value {
-                    section.value = animation.change_text.text.clone();
+            for (index, txt) in animation.change_text.iter().enumerate() {
+                if txt.text != text.sections[index].value {
+                    text.sections[index].value = txt.text.clone();
                 }
-                if animation.change_text.font_size != 0.0 {
-                    section.style.font_size = self.start_text.font_size + animation.change_text.font_size * ratio;
+                if txt.font_size != 0.0 {
+                    text.sections[index].style.font_size =
+                        self.start_text[index].font_size + txt.font_size * ratio;
                 }
-                if animation.change_text.color != Color::NONE {
-                    section.style.color = lerp_color(
-                        self.start_text.color,
-                        animation.change_text.color,
-                        ratio,
-                    );
+                if txt.color != Color::NONE {
+                    text.sections[index].style.color =
+                        lerp_color(self.start_text[index].color, txt.color, ratio);
                 }
             }
         }
@@ -651,8 +661,6 @@ impl Animator {
         self.pause = false;
         self
     }
-
-    
 
     pub fn get_pause(&self) -> bool {
         self.pause
@@ -723,7 +731,7 @@ impl Plugin for AnimatorPlugin {
         app.add_systems(Update, update_text);
     }
 }
-
+#[cfg(feature = "bevy_ui")]
 fn update_style(mut query: Query<(&mut Style, &mut Animator)>) {
     for (mut style, mut animator) in query.iter_mut() {
         if !animator.pause {
@@ -741,7 +749,7 @@ fn update_transform(mut query: Query<(&mut Transform, &mut Animator)>, time: Res
         }
     }
 }
-
+#[cfg(feature = "bevy_sprite")]
 fn update_sprite(mut query: Query<(&mut Sprite, &mut Animator)>) {
     for (mut sprite, mut animator) in query.iter_mut() {
         if !animator.pause {
@@ -749,7 +757,7 @@ fn update_sprite(mut query: Query<(&mut Sprite, &mut Animator)>) {
         }
     }
 }
-
+#[cfg(feature = "bevy_text")]
 fn update_text(mut query: Query<(&mut Text, &mut Animator)>) {
     for (mut text, mut animator) in query.iter_mut() {
         if !animator.pause {

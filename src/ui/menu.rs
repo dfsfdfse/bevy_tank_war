@@ -22,7 +22,7 @@ pub fn setup_ui_menu(mut commands: Commands) {
             grid(
                 3,
                 2,
-                48.,
+                60.,
                 class_node_menu,
                 class_node_menu_item,
                 gc,

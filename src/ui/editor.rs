@@ -1,46 +1,79 @@
 use bevy::prelude::*;
 
 use crate::{
-    res::{Clear, GameMapCollection, GAME_ICON_ARROW_LEFT},
+    res::{Clear, GameMapCollection, NodeBlock, UISelectInfo},
     utils::{
-        animate::Animator,
-        widget::{grid, node_children, node_root, node_text, GridItemInfo},
+        class::StyleCommand,
+        widget::{node_children, node_root, text, GridItemInfo},
     },
 };
 
-use super::class::editor_class::{
-    class_node_icon_text, class_node_left_panel, class_node_map_name_text,
+use super::{
+    class::{
+        class_node_fill,
+        editor_class::{
+            class_node_collapse_item_default, class_node_collapse_item_hover,
+            class_node_left_panel, class_node_map_name_style, class_node_map_name_text,
+        },
+    },
+    widget::{wd_node_block, wd_setup_collapse_grid},
 };
 
-pub fn setup_ui_editor(commands: Commands, gm_maps: Res<GameMapCollection>) {
+pub fn setup_ui_editor(
+    commands: Commands,
+    gm_maps: Res<GameMapCollection>,
+    select_info: Res<UISelectInfo>,
+) {
     node_root(class_node_left_panel, commands, Clear, |gc| {
-        node_children((), gc, (), |gc| {
-            node_children((), gc, (), |gc| {
-                node_text(
-                    GAME_ICON_ARROW_LEFT,
-                    class_node_icon_text,
-                    gc,
-                    Animator::default(),
-                );
-                node_text("LEVEL", (), gc, ());
-            });
-            grid(gm_maps.maps.len(), 1, 30., (), (), gc, (), |gc, r, c| {
-                node_text("", class_node_map_name_text, gc, GridItemInfo(r, c));
-            });
+        wd_setup_collapse_grid("LEVEL", gm_maps.maps.len(), 1, 30., gc, |gc, r, c| {
+            node_children(
+                (
+                    class_node_fill,
+                    if select_info.map_editor_level_index == r {
+                        class_node_collapse_item_hover
+                    } else {
+                        class_node_collapse_item_default
+                    },
+                ),
+                gc,
+                (Interaction::None, GridItemInfo(r, c)),
+                |gc| {
+                    node_children(class_node_map_name_style, gc, (), |gc| {
+                        text(
+                            [gm_maps.maps[r].name.as_str()],
+                            class_node_map_name_text,
+                            gc,
+                            (),
+                        );
+                    });
+                },
+            );
         });
-        node_children((), gc, (), |gc| {
-            node_children((), gc, (), |gc| {
-                node_text(
-                    GAME_ICON_ARROW_LEFT,
-                    class_node_icon_text,
-                    gc,
-                    Animator::default(),
-                );
-                node_text("BLOCKS", (), gc, ());
-            });
-            grid(5, 2, 60., (), (), gc, (), |gc, r, c| {});
+        wd_setup_collapse_grid("BLOCK", 5, 2, 75., gc, |gc, r, c| {
+            let index = r * 2 + c;
+            if index < 9 {
+                wd_node_block((Interaction::None, NodeBlock::new(0, index)), gc, r, c, select_info.as_ref());
+            }
         });
     });
 }
 
-pub fn update_ui_editor() {}
+pub fn update_ui_editor(
+    mut commands: Commands,
+    query_event: Query<(&Interaction, &GridItemInfo), Changed<Interaction>>,
+    query_entity: Query<Entity, (With<Interaction>, With<GridItemInfo>)>,
+    mut ui_selector: ResMut<UISelectInfo>,
+) {
+    for (interaction, grid_item) in query_event.iter() {
+        if *interaction == Interaction::Pressed {
+            ui_selector.map_editor_level_index = grid_item.0;
+        }
+    }
+    for (index, entity) in query_entity.iter().enumerate() {
+        if index == ui_selector.map_editor_level_index {
+            commands.set_style(entity, class_node_collapse_item_hover);
+        } else {
+            commands.set_style(entity, class_node_collapse_item_default);
+        }
+    }
+}

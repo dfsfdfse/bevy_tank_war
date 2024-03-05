@@ -74,6 +74,23 @@ widget_bundle_children!(sprite_sheet_children, SpriteSheetBundle);
 widget_bundle_root!(node_root, NodeBundle);
 widget_bundle_root!(sprite_root, SpriteBundle);
 
+pub fn text<P>(
+    text_list: impl IntoIterator<Item = impl Into<String>>,
+    class: impl Class<P>,
+    commands: &mut ChildBuilder,
+    relate: impl Bundle,
+) -> Entity {
+    commands
+        .spawn((
+            TextBundle::from_sections(text_list.into_iter().map(|v| TextSection::from(v.into()))),
+            relate,
+        ))
+        .add(move |entity: Entity, world: &mut World| {
+            class.apply(entity, world.as_unsafe_world_cell());
+        })
+        .id()
+}
+
 pub fn node_text<P>(
     text: impl Into<String>,
     class: impl Class<P>,

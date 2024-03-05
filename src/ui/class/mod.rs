@@ -9,3 +9,8 @@ pub fn despawn_screen<T: Component>(to_despawn: Query<Entity, With<T>>, mut comm
         commands.entity(entity).despawn_recursive();
     }
 }
+
+pub fn class_node_fill(mut style: Mut<Style>) {
+    style.width = Val::Percent(100.);
+    style.height = Val::Percent(100.);
+}

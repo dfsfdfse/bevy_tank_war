@@ -2,6 +2,8 @@ use bevy::prelude::*;
 use bevy_asset_loader::asset_collection::AssetCollection;
 use serde::{Deserialize, Serialize};
 
+use crate::plugins::gen_id;
+
 ///全局游戏状态
 #[derive(Default, States, Debug, Hash, PartialEq, Eq, Clone)]
 pub enum GameState {
@@ -14,8 +16,18 @@ pub enum GameState {
     UIMapEditor,
 }
 /* -----------Component--------------- */
+///清除实体的组件
 #[derive(Component)]
 pub struct Clear;
+///关联查询的组件
+#[derive(Component, Clone, Copy, PartialEq, Eq)]
+pub struct Relate(pub i64);
+
+impl Relate {
+    pub fn new() -> Self {
+        Relate(gen_id())
+    }
+}
 
 #[derive(Component, Clone, Debug)]
 pub struct Block {
@@ -34,8 +46,33 @@ impl Block {
             size,
         }
     }
+
+    pub fn to_pos(&self) -> (f32, f32) {
+        if self.size == (1, 1) {
+            (
+                (self.col as f32 - 12.5) * GAME_BLOCK_SIZE.1 as f32,
+                (12.5 - self.row as f32) * GAME_BLOCK_SIZE.0 as f32,
+            )
+        } else {
+            (
+                (self.col as f32 - 12.) * GAME_BLOCK_SIZE.1 as f32,
+                (12. - self.row as f32) * GAME_BLOCK_SIZE.0 as f32,
+            )
+        }
+    }
 }
 
+#[derive(Component, Clone)]
+pub struct NodeBlock {
+    pub index: usize,
+    pub type_index: usize,
+}
+
+impl NodeBlock {
+    pub fn new(index: usize, type_index: usize) -> Self {
+        Self { index, type_index }
+    }
+}
 /* -----------Component--------------- */
 
 /* ---------------Const--------------- */
@@ -127,7 +164,7 @@ pub struct GameMap {
 
 impl GameMap {
     pub fn to_blocks(&self) -> Vec<Block> {
-        let mut blocks = vec![];
+        let mut blocks: Vec<Block> = vec![];
         let mut stick = vec![];
         for (r, row) in self.map.iter().enumerate() {
             for (c, block) in row.iter().enumerate() {
@@ -162,7 +199,7 @@ pub struct HandleLoadMap(pub Handle<GameMapCollection>);
 pub struct UISelectInfo {
     pub menu: usize,
     pub map_index: usize,
-    pub map_editor_index: usize,
+    pub map_editor_level_index: usize,
     pub map_editor_block: usize,
 }
 

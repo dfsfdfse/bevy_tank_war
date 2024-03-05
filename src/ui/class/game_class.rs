@@ -22,8 +22,9 @@ pub fn class_sprite_sheet_block(
     } else {
         atlas.layout = gm_res.layout_tank.clone();
     }
-    transform.translation.x = (block.col as f32 - 12.) * GAME_BLOCK_SIZE.1 as f32;
-    transform.translation.y = (12. - block.row as f32) * GAME_BLOCK_SIZE.0 as f32;
+    let (x, y) = block.to_pos();
+    transform.translation.x = x;
+    transform.translation.y = y;
 }
 
 pub fn class_sprite_block(
@@ -38,6 +39,7 @@ pub fn class_sprite_block(
         (GAME_BLOCK_SIZE.0 * block.size.0) as f32,
     ));
     *image = gm_res.blocks[block.block - 1].clone();
-    transform.translation.x = (block.col as f32 - 12.5) * GAME_BLOCK_SIZE.1 as f32;
-    transform.translation.y = (12.5 - block.row as f32) * GAME_BLOCK_SIZE.0 as f32;
+    let (x, y) = block.to_pos();
+    transform.translation.x = x;
+    transform.translation.y = y;
 }
