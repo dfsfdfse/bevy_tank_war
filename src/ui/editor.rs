@@ -4,6 +4,7 @@ use crate::{
     res::{Clear, GameMapCollection, NodeBlock, UISelectInfo},
     utils::{
         class::StyleCommand,
+        util::vec2_to_transform_pos,
         widget::{node_children, node_root, text, GridItemInfo},
     },
 };
@@ -52,7 +53,13 @@ pub fn setup_ui_editor(
         wd_setup_collapse_grid("BLOCK", 5, 2, 75., gc, |gc, r, c| {
             let index = r * 2 + c;
             if index < 9 {
-                wd_node_block((Interaction::None, NodeBlock::new(0, index)), gc, r, c, select_info.as_ref());
+                wd_node_block(
+                    (Interaction::None, NodeBlock::new(0, index)),
+                    gc,
+                    r,
+                    c,
+                    select_info.as_ref(),
+                );
             }
         });
     });
@@ -63,6 +70,8 @@ pub fn update_ui_editor(
     query_event: Query<(&Interaction, &GridItemInfo), Changed<Interaction>>,
     query_entity: Query<Entity, (With<Interaction>, With<GridItemInfo>)>,
     mut ui_selector: ResMut<UISelectInfo>,
+    mut move_event: EventReader<CursorMoved>,
+    mut gizmos: Gizmos,
 ) {
     for (interaction, grid_item) in query_event.iter() {
         if *interaction == Interaction::Pressed {
@@ -75,5 +84,51 @@ pub fn update_ui_editor(
         } else {
             commands.set_style(entity, class_node_collapse_item_default);
         }
+    }
+    for evt in move_event.read() {
+        let transform_pos = vec2_to_transform_pos(evt.position);
+        if transform_pos.0 > -312.
+            && transform_pos.1 > -312.
+            && transform_pos.1 < 312.
+            && transform_pos.0 < 312.
+        {
+            ui_selector.map_editor_cursor = (
+                ((312. - transform_pos.1) / 48.) as usize,
+                ((transform_pos.0 + 312.) / 48.) as usize,
+            );
+            ui_selector.show_line = true;
+        } else {
+            ui_selector.show_line = false;
+        }
+    }
+    if ui_selector.show_line {
+        let (x_start, x_end, y_start, y_end, start_edge, end_edge) = (
+            ui_selector.map_editor_cursor.1 as f32 * 48. - 312.,
+            ui_selector.map_editor_cursor.1 as f32 * 48. - 264.,
+            -(ui_selector.map_editor_cursor.0 as f32 * 48.) + 312.,
+            -(ui_selector.map_editor_cursor.0 as f32 * 48.) + 264.,
+            -312.,
+            312.,
+        );
+        gizmos.line_2d(
+            Vec2::new(x_start, start_edge),
+            Vec2::new(x_start, end_edge),
+            Color::RED,
+        );
+        gizmos.line_2d(
+            Vec2::new(x_end, start_edge),
+            Vec2::new(x_end, end_edge),
+            Color::RED,
+        );
+        gizmos.line_2d(
+            Vec2::new(start_edge, y_start),
+            Vec2::new(end_edge, y_start),
+            Color::RED,
+        );
+        gizmos.line_2d(
+            Vec2::new(start_edge, y_end),
+            Vec2::new(end_edge, y_end),
+            Color::RED,
+        );
     }
 }

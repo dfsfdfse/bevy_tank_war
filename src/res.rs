@@ -197,10 +197,12 @@ pub struct HandleLoadMap(pub Handle<GameMapCollection>);
 ///界面中选择的信息
 #[derive(Resource, Default)]
 pub struct UISelectInfo {
-    pub menu: usize,
-    pub map_index: usize,
-    pub map_editor_level_index: usize,
-    pub map_editor_block: usize,
+    pub menu: usize,//菜单index
+    pub map_index: usize,//游戏选择的地图index
+    pub map_editor_level_index: usize, //地图编辑器选择的地图index
+    pub map_editor_block: usize,//地图编辑器选择的块index
+    pub map_editor_cursor: (usize, usize),//地图编辑器的光标位置大方块的 (row, col)
+    pub show_line: bool,//是否显示光标的边框
 }
 
 /* -----------Resource--------------- */

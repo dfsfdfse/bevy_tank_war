@@ -220,6 +220,7 @@ pub fn wd_update_node_block(
             ui_select_info.map_editor_block = node_block.type_index;
         }
     }
+    //还可以优化存储上次的选择的实体Entity,然后只更新上次和当前的选择
     for (index, entity) in query_entity.iter().enumerate() {
         if index == ui_select_info.map_editor_block {
             commands.set_style(entity, class_wd_node_block_container_select);
