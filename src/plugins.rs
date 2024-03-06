@@ -8,12 +8,11 @@ use idgenerator::{IdGeneratorOptions, IdInstance};
 use crate::{
     load::{setup_load_game_map_resource, update_load_to_ui_menu},
     res::{
-        Clear, GameMapCollection, GameSettings, GameSource, GameState, UISelectInfo,
-        INITIAL_SETTINGS,
+        Clear, GameMapCollection, GameSettings, GameSource, GameState, LastSelectInfo, UISelectInfo, INITIAL_SETTINGS
     },
     ui::{
         class::despawn_screen,
-        editor::{setup_ui_editor, update_ui_editor},
+        editor::{setup_ui_editor, update_ui_editor, update_ui_editor_brush},
         game::setup_ui_game,
         menu::{setup_ui_menu, update_ui_menu},
         widget::{wd_update_collapse_grid, wd_update_node_block},
@@ -30,6 +29,7 @@ impl Plugin for GamePlugin {
         app.init_state::<GameState>()
             .insert_resource(GameSettings::default())
             .insert_resource(UISelectInfo::default())
+            .insert_resource(LastSelectInfo::default())
             .add_plugins((
                 DefaultPlugins.set(WindowPlugin {
                     primary_window: Some(Window {
@@ -66,7 +66,12 @@ impl Plugin for GamePlugin {
             )
             .add_systems(
                 Update,
-                (update_ui_editor, wd_update_collapse_grid, wd_update_node_block)
+                (
+                    update_ui_editor,
+                    wd_update_collapse_grid,
+                    wd_update_node_block,
+                    update_ui_editor_brush,
+                )
                     .run_if(in_state(GameState::UIMapEditor)),
             );
     }

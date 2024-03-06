@@ -29,26 +29,46 @@ impl Relate {
     }
 }
 
-#[derive(Component, Clone, Debug)]
+#[derive(Component, Clone, Debug, PartialEq, Eq, Hash)]
 pub struct Block {
     pub row: usize,
     pub col: usize,
     pub block: usize,
-    pub size: (usize, usize),
+}
+#[derive(Component, Clone, Copy, PartialEq, Eq)]
+pub struct FourBlock {
+    pub row: usize,
+    pub col: usize,
+    pub inner: [usize; 4],
+}
+
+impl Default for FourBlock {
+    fn default() -> Self {
+        FourBlock {
+            row: 99,
+            col: 99,
+            inner: [0, 0, 0, 0],
+        }
+    }
+}
+
+impl Default for Block {
+    fn default() -> Self {
+        Block {
+            row: 99,
+            col: 99,
+            block: 0,
+        }
+    }
 }
 
 impl Block {
-    pub fn new(row: usize, col: usize, block: usize, size: (usize, usize)) -> Self {
-        Block {
-            row,
-            col,
-            block,
-            size,
-        }
+    pub fn new(row: usize, col: usize, block: usize) -> Self {
+        Block { row, col, block }
     }
 
     pub fn to_pos(&self) -> (f32, f32) {
-        if self.size == (1, 1) {
+        if GAME_AREA_BLOCK.contains(&self.block) {
             (
                 (self.col as f32 - 12.5) * GAME_BLOCK_SIZE.1 as f32,
                 (12.5 - self.row as f32) * GAME_BLOCK_SIZE.0 as f32,
@@ -66,11 +86,16 @@ impl Block {
 pub struct NodeBlock {
     pub index: usize,
     pub type_index: usize,
+    pub current: usize,
 }
 
 impl NodeBlock {
     pub fn new(index: usize, type_index: usize) -> Self {
-        Self { index, type_index }
+        Self {
+            index,
+            type_index,
+            current: type_index,
+        }
     }
 }
 /* -----------Component--------------- */
@@ -88,6 +113,13 @@ pub struct KeysBinding {
     pub left: KeyCode,
     pub right: KeyCode,
     pub fire: KeyCode,
+}
+
+pub enum BlockState {
+    Remove,
+    Add,
+    Change,
+    Stay,
 }
 
 pub const INITIAL_SETTINGS: InitialSettings = InitialSettings {
@@ -118,6 +150,8 @@ pub const GAME_LOGO_SIZE: (f32, f32) = (450., 120.);
 pub const GAME_MENU_TEXT_SIZE: f32 = 22.0;
 pub const GAME_ICON_ARROW_LEFT: &'static str = "\u{e7f9}";
 pub const GAME_ICON_ARROW_DOWN: &'static str = "\u{e873}";
+pub const GAME_AREA_BLOCK: [usize; 5] = [1, 2, 3, 4, 5];
+pub const GAME_AREA_BLOCK_FOUR: [usize; 3] = [6, 7, 8];
 /* ---------------Const--------------- */
 
 /* -----------Resource--------------- */
@@ -170,13 +204,13 @@ impl GameMap {
             for (c, block) in row.iter().enumerate() {
                 if stick.contains(&(r, c)) {
                     stick.retain(|(sy, sx)| !(*sy == r && *sx == c));
-                } else if [3, 4, 5, 6, 7].contains(block) {
-                    blocks.push(Block::new(r, c, *block, (2, 2)));
+                } else if [3, 4, 5, 6, 7, 8].contains(block) {
+                    blocks.push(Block::new(r, c, *block));
                     stick.push((r, c + 1));
                     stick.push((r + 1, c));
                     stick.push((r + 1, c + 1));
                 } else if [1, 2].contains(block) {
-                    blocks.push(Block::new(r, c, *block, (1, 1)));
+                    blocks.push(Block::new(r, c, *block));
                 }
             }
         }
@@ -184,6 +218,38 @@ impl GameMap {
             println!("map data error!");
         }
         blocks
+    }
+
+    pub fn init_fixed(&mut self) {
+        let mut stick = vec![6, 7, 8];
+        for row in self.map.iter_mut() {
+            for block in row.iter_mut() {
+                if stick.contains(block) {
+                    stick.retain(|b| *b != *block);
+                }
+            }
+        }
+        println!("{:?}", stick);
+        for blk in stick.iter() {
+            let mut ir = 0;
+            let mut ic = 0;
+            loop {
+                if GAME_AREA_BLOCK_FOUR.contains(&self.map[ir][ic]) {
+                    if ir > 25 {
+                        ir = 0;
+                        ic += 2;
+                    } else {
+                        ir += 2;
+                    }
+                } else {
+                    self.map[ir][ic] = *blk;
+                    self.map[ir][ic + 1] = *blk;
+                    self.map[ir + 1][ic] = *blk;
+                    self.map[ir + 1][ic + 1] = *blk;
+                    break;
+                }
+            }
+        }
     }
 }
 
@@ -197,12 +263,19 @@ pub struct HandleLoadMap(pub Handle<GameMapCollection>);
 ///界面中选择的信息
 #[derive(Resource, Default)]
 pub struct UISelectInfo {
-    pub menu: usize,//菜单index
-    pub map_index: usize,//游戏选择的地图index
+    pub menu: usize,                   //菜单index
+    pub map_index: usize,              //游戏选择的地图index
     pub map_editor_level_index: usize, //地图编辑器选择的地图index
-    pub map_editor_block: usize,//地图编辑器选择的块index
-    pub map_editor_cursor: (usize, usize),//地图编辑器的光标位置大方块的 (row, col)
-    pub show_line: bool,//是否显示光标的边框
+    pub map_editor_block: usize,       //地图编辑器选择的块index
+    pub map_editor_blocks_inner: [[bool; 4]; 2],
+    pub map_editor_cursor: (usize, usize), //地图编辑器的光标位置大方块的 (row, col)
+    pub show_line: bool,                   //是否显示光标的边框
+}
+#[derive(Resource, Default)]
+pub struct LastSelectInfo {
+    pub last_map_editor_block: Option<Entity>,
+    pub last_map_editor_small_block: Option<Entity>,
+    pub last_spawn_block: Vec<Block>, //地图编辑器点击后上次生成的块 左上位置的块
 }
 
 /* -----------Resource--------------- */

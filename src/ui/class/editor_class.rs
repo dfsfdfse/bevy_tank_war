@@ -145,9 +145,11 @@ pub fn class_wd_node_block_item(
 ) {
     style.width = Val::Px(24.);
     style.height = Val::Px(24.);
-    if node_block.type_index == 0 {
+    if node_block.current == 0 {
         background_color.0 = Color::BLACK;
+        image.texture = Default::default();
     } else {
-        image.texture = gm_res.blocks[node_block.type_index - 1].clone();
+        background_color.0 = Color::WHITE;
+        image.texture = gm_res.blocks[node_block.current - 1].clone();
     }
 }

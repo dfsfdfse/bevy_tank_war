@@ -11,7 +11,10 @@ pub fn update_load_to_ui_menu(
     mut maps: ResMut<Assets<GameMapCollection>>,
     mut next_state: ResMut<NextState<GameState>>,
 ) {
-    if let Some(map) = maps.remove(map_handle.0.id()) {
+    if let Some(mut map) = maps.remove(map_handle.0.id()) {
+        for m in map.maps.iter_mut() {
+            m.init_fixed();
+        }
         commands.insert_resource(map);
         next_state.set(GameState::UIMenu);
     }

@@ -3,7 +3,7 @@ use std::{array::from_fn, time::Duration};
 use bevy::prelude::*;
 
 use crate::{
-    res::{Block, NodeBlock, Relate, UISelectInfo, GAME_ICON_ARROW_LEFT},
+    res::{Block, LastSelectInfo, NodeBlock, Relate, UISelectInfo, GAME_ICON_ARROW_LEFT},
     utils::{
         animate::{Animator, LoopStrategy},
         class::StyleCommand,
@@ -25,29 +25,27 @@ use super::class::{
     game_class::class_sprite_block,
 };
 
-pub fn wd_sprite_block(gc: &mut ChildBuilder, block: &Block, relate: impl Bundle) {
-    sprite_children((), gc, relate, |gc| {
-        sprite(
-            class_sprite_block,
-            gc,
-            Block::new(block.row, block.col, block.block, (1, 1)),
-        );
-        sprite(
-            class_sprite_block,
-            gc,
-            Block::new(block.row, block.col + 1, block.block, (1, 1)),
-        );
-        sprite(
-            class_sprite_block,
-            gc,
-            Block::new(block.row + 1, block.col, block.block, (1, 1)),
-        );
-        sprite(
-            class_sprite_block,
-            gc,
-            Block::new(block.row + 1, block.col + 1, block.block, (1, 1)),
-        );
-    });
+pub fn wd_sprite_block(gc: &mut ChildBuilder, block: &Block) {
+    sprite(
+        class_sprite_block,
+        gc,
+        Block::new(block.row, block.col, block.block),
+    );
+    sprite(
+        class_sprite_block,
+        gc,
+        Block::new(block.row, block.col + 1, block.block),
+    );
+    sprite(
+        class_sprite_block,
+        gc,
+        Block::new(block.row + 1, block.col, block.block),
+    );
+    sprite(
+        class_sprite_block,
+        gc,
+        Block::new(block.row + 1, block.col + 1, block.block),
+    );
 }
 ///目前bevy支持的文字组件设置样式确实太垃圾,只能多层嵌套
 pub fn wd_setup_collapse_grid(
@@ -152,7 +150,7 @@ pub fn wd_node_block(
     row: usize,
     col: usize,
     select_info: &UISelectInfo,
-) {
+) -> Entity {
     let index = row * 2 + col;
     if index < 6 {
         node_children(
@@ -181,7 +179,7 @@ pub fn wd_node_block(
                         from_fn(|i| image(class_wd_node_block_item, gc, NodeBlock::new(i, index)));
                 }
             },
-        );
+        )
     } else {
         node_children(
             (
@@ -205,27 +203,50 @@ pub fn wd_node_block(
                     NodeBlock::new(0, index),
                 );
             },
-        );
+        )
     }
 }
 
 pub fn wd_update_node_block(
     mut commands: Commands,
-    query_entity: Query<Entity, (With<Interaction>, With<NodeBlock>, With<BorderColor>)>,
-    mut query_change: Query<(&Interaction, &NodeBlock), (Changed<Interaction>, With<BorderColor>)>,
+    mut query_change: Query<
+        (&Interaction, Entity, &NodeBlock),
+        (Changed<Interaction>, With<BorderColor>),
+    >,
+    mut query_small_change: Query<
+        (&Interaction, Entity, &mut NodeBlock),
+        (Changed<Interaction>, Without<BorderColor>),
+    >,
     mut ui_select_info: ResMut<UISelectInfo>,
+    mut last_select_info: ResMut<LastSelectInfo>,
 ) {
-    for (interaction, node_block) in query_change.iter_mut() {
-        if *interaction == Interaction::Pressed {
-            ui_select_info.map_editor_block = node_block.type_index;
+    for (interaction, entity, mut node_block) in query_small_change.iter_mut() {
+        if *interaction == Interaction::Pressed
+            && ui_select_info.map_editor_block == node_block.type_index
+        {
+            node_block.current = if node_block.current == ui_select_info.map_editor_block {
+                0
+            } else {
+                ui_select_info.map_editor_block
+            };
+            if [1, 2].contains(&ui_select_info.map_editor_block) {
+                let index = ui_select_info.map_editor_block - 1;
+                ui_select_info.map_editor_blocks_inner[index][node_block.index] =
+                    node_block.current == 0;
+            }
+            commands.set_style(entity, class_wd_node_block_item);
         }
     }
-    //还可以优化存储上次的选择的实体Entity,然后只更新上次和当前的选择
-    for (index, entity) in query_entity.iter().enumerate() {
-        if index == ui_select_info.map_editor_block {
+    for (interaction, entity, node_block) in query_change.iter_mut() {
+        if *interaction == Interaction::Pressed
+            && node_block.type_index != ui_select_info.map_editor_block
+        {
+            if let Some(last_entity) = last_select_info.last_map_editor_block {
+                commands.set_style(last_entity, class_wd_node_block_container_default);
+            }
             commands.set_style(entity, class_wd_node_block_container_select);
-        } else {
-            commands.set_style(entity, class_wd_node_block_container_default);
+            ui_select_info.map_editor_block = node_block.type_index;
+            last_select_info.last_map_editor_block = Some(entity);
         }
     }
 }
