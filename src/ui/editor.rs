@@ -107,7 +107,6 @@ pub fn update_ui_editor_brush(
     mut commands: Commands,
     mouse_event: Res<ButtonInput<MouseButton>>,
     mut ui_selector: ResMut<UISelectInfo>,
-    //mut last_select_info: ResMut<LastSelectInfo>,
     mut move_event: EventReader<CursorMoved>,
     mut gizmos: Gizmos,
     mut query_block: Query<(&mut Block, Entity)>,

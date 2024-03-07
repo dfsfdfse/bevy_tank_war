@@ -231,7 +231,7 @@ pub fn wd_update_node_block(
             };
             if [1, 2].contains(&ui_select_info.map_editor_block) {
                 let index = ui_select_info.map_editor_block - 1;
-                ui_select_info.map_editor_blocks_inner[index][node_block.index] = 0;
+                ui_select_info.map_editor_blocks_inner[index][node_block.index] = node_block.current;
             }
             commands.set_style(entity, class_wd_node_block_item);
         }
