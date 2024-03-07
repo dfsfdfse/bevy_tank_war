@@ -48,6 +48,27 @@ impl Default for Moving {
     }
 }
 
+impl Moving {
+    pub fn new(direction: GameDirection, speed: f32) -> Self {
+        Moving { direction, speed }
+    }
+}
+
+#[derive(Component, Default)]
+pub struct Bullet {
+    pub strength: bool,
+    pub tank_pos: (f32, f32),
+}
+
+impl Bullet {
+    pub fn new(strength: bool, tank_pos: (f32, f32)) -> Self {
+        Bullet {
+            strength,
+            tank_pos,
+        }
+    }
+}
+
 #[derive(Component, Clone)]
 pub struct Player {
     pub id: i64,
@@ -56,6 +77,7 @@ pub struct Player {
     pub direction_stack: Vec<GameDirection>,
     pub keys_binding: Option<KeysBinding>,
     pub last_turn_direction: Option<GameDirection>,
+    pub bullet: Option<Entity>,
 }
 
 impl Player {
@@ -67,6 +89,7 @@ impl Player {
             direction_stack: vec![],
             keys_binding: Some(PLAYER1_KEYS),
             last_turn_direction: None,
+            bullet: None,
         }
     }
 
@@ -78,6 +101,7 @@ impl Player {
             direction_stack: vec![],
             keys_binding: Some(PLAYER2_KEYS),
             last_turn_direction: None,
+            bullet: None,
         }
     }
 
@@ -108,6 +132,20 @@ impl Colider {
             filter: Vec::new(),
             is_container: false,
         }
+    }
+
+    pub fn new_bullet() -> Self {
+        Colider {
+            index: 10,
+            width: 12.0,
+            height: 12.0,
+            filter: vec![5],
+            is_container: false,
+        }
+    }
+
+    pub fn is_bullet(&self) -> bool {
+        self.index == 10
     }
 
     pub fn add_filter(&mut self, filter: usize) -> &mut Self {

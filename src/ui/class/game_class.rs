@@ -1,7 +1,8 @@
 use bevy::prelude::*;
 
 use crate::res::{
-    Block, GameDirection, GameSource, Moving, Player, GAME_AREA_BLOCK, GAME_BLOCK_SIZE, GAME_SIZE,
+    Block, Bullet, GameDirection, GameSource, Moving, Player, GAME_AREA_BLOCK, GAME_BLOCK_SIZE,
+    GAME_SIZE,
 };
 
 pub fn class_sprite_panel(
@@ -65,7 +66,34 @@ pub fn class_sprite_block(
     transform.translation.z = if block.block == 4 { 3. } else { 2. };
 }
 
-pub fn class_game_update(
+pub fn class_sprite_bullet(
+    mut image: Mut<Handle<Image>>,
+    mut transform: Mut<Transform>,
+    direction: Mut<Moving>,
+    bullet: Mut<Bullet>,
+    gm_res: Res<GameSource>,
+) {
+    match direction.direction {
+        GameDirection::Up => {
+            transform.translation = Vec3::new(bullet.tank_pos.0, bullet.tank_pos.1 + 24., 2.);
+            *image = gm_res.bullets[0].clone();
+        }
+        GameDirection::Down => {
+            transform.translation = Vec3::new(bullet.tank_pos.0, bullet.tank_pos.1 - 24., 2.);
+            *image = gm_res.bullets[1].clone();
+        }
+        GameDirection::Left => {
+            transform.translation = Vec3::new(bullet.tank_pos.0 - 24., bullet.tank_pos.1, 2.);
+            *image = gm_res.bullets[2].clone();
+        }
+        GameDirection::Right => {
+            transform.translation = Vec3::new(bullet.tank_pos.0 + 24., bullet.tank_pos.1, 2.);
+            *image = gm_res.bullets[3].clone();
+        }
+    }
+}
+
+pub fn class_player_update(
     mut transform: Mut<Transform>,
     mut layout: Mut<TextureAtlas>,
     mut tank: Mut<Moving>,
@@ -112,6 +140,23 @@ pub fn class_game_update(
             }
         } else {
             player.last_turn_direction = Some(*dir);
+        }
+    }
+}
+
+pub fn class_bullet_update(mut transform: Mut<Transform>, bullet: Mut<Moving>) {
+    match bullet.direction {
+        GameDirection::Up => {
+            transform.translation.y += bullet.speed as f32;
+        }
+        GameDirection::Down => {
+            transform.translation.y -= bullet.speed as f32;
+        }
+        GameDirection::Left => {
+            transform.translation.x -= bullet.speed as f32;
+        }
+        GameDirection::Right => {
+            transform.translation.x += bullet.speed as f32;
         }
     }
 }

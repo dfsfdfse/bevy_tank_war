@@ -2,13 +2,19 @@ use bevy::prelude::*;
 
 use crate::{
     res::{
-        Clear, Colider, GameDirection, GameMapCollection, GameState, Moving, Player, UISelectInfo,
+        Bullet, Clear, Colider, GameDirection, GameMapCollection, GameState, Moving, Player,
+        UISelectInfo,
     },
-    utils::{class::StyleCommand, widget::sprite_root},
+    utils::{
+        class::StyleCommand,
+        widget::{sprite, sprite_root},
+    },
 };
 
 use super::{
-    class::game_class::{class_game_update, class_sprite_panel},
+    class::game_class::{
+        class_bullet_update, class_player_update, class_sprite_bullet, class_sprite_panel,
+    },
     widget::wd_load_game_map,
 };
 
@@ -25,10 +31,13 @@ pub fn setup_ui_game(
 
 pub fn update_ui_game(
     mut commands: Commands,
-    mut query_player: Query<(&mut Player, Entity)>,
+    mut query_player: Query<(&mut Player, &Transform, &Moving, Entity)>,
+    query_bullet: Query<Entity, With<Bullet>>,
     key_event: Res<ButtonInput<KeyCode>>,
+    panel_entity: Query<Entity, (With<Clear>, With<Sprite>)>,
 ) {
-    for (mut player, entity) in query_player.iter_mut() {
+    let panel_entity = panel_entity.single();
+    for (mut player, transform, mov, entity) in query_player.iter_mut() {
         if let Some(keys) = player.keys_binding {
             if key_event.just_pressed(keys.up) {
                 player.direction_stack.push(GameDirection::Up);
@@ -52,8 +61,27 @@ pub fn update_ui_game(
                     .direction_stack
                     .retain(|&x| x != GameDirection::Right);
             }
-            commands.set_style(entity, class_game_update);
+
+            if key_event.pressed(keys.fire) && player.bullet.is_none() {
+                commands.entity(panel_entity).with_children(|gc| {
+        
+                    let id = sprite(
+                        class_sprite_bullet,
+                        gc,
+                        (
+                            Moving::new(mov.direction, 4.),
+                            Bullet::new(false, (transform.translation.x, transform.translation.y)),
+                            Colider::new_bullet(),
+                        ),
+                    );
+                    player.bullet = Some(id);
+                });
+            }
+            commands.set_style(entity, class_player_update);
         }
+    }
+    for entity in query_bullet.iter() {
+        commands.set_style(entity, class_bullet_update);
     }
 }
 
@@ -87,36 +115,43 @@ pub fn update_check_collision(
                     }
                 }
             } else {
-                if transform.translation.y + rect.height / 2.0
-                > st_transform.translation.y - collider.height / 2.0
-                && transform.translation.y - rect.height / 2.0
-                    < st_transform.translation.y + collider.height / 2.0
-                && transform.translation.x + rect.width / 2.0
-                    > st_transform.translation.x - collider.width / 2.0
-                && transform.translation.x - rect.width / 2.0
-                    < st_transform.translation.x + collider.width / 2.0
-            {
-                match mov.direction {
-                    GameDirection::Up => {
-                        transform.translation.y =
-                            st_transform.translation.y - collider.height / 2.0 - rect.height / 2.0;
+                if !rect.filter.contains(&collider.index)
+                    && (transform.translation.y + rect.height / 2.0
+                        > st_transform.translation.y - collider.height / 2.0
+                        && transform.translation.y - rect.height / 2.0
+                            < st_transform.translation.y + collider.height / 2.0
+                        && transform.translation.x + rect.width / 2.0
+                            > st_transform.translation.x - collider.width / 2.0
+                        && transform.translation.x - rect.width / 2.0
+                            < st_transform.translation.x + collider.width / 2.0)
+                {
+                    if rect.is_bullet(){
+                        //todo 爆炸
                     }
-                    GameDirection::Down => {
-                        transform.translation.y =
-                            st_transform.translation.y + collider.height / 2.0 + rect.height / 2.0;
-                    }
-                    GameDirection::Left => {
-                        transform.translation.x =
-                            st_transform.translation.x + collider.width / 2.0 + rect.width / 2.0;
-                    }
-                    GameDirection::Right => {
-                        transform.translation.x =
-                            st_transform.translation.x - collider.width / 2.0 - rect.width / 2.0;
+                    match mov.direction {
+                        GameDirection::Up => {
+                            transform.translation.y = st_transform.translation.y
+                                - collider.height / 2.0
+                                - rect.height / 2.0;
+                        }
+                        GameDirection::Down => {
+                            transform.translation.y = st_transform.translation.y
+                                + collider.height / 2.0
+                                + rect.height / 2.0;
+                        }
+                        GameDirection::Left => {
+                            transform.translation.x = st_transform.translation.x
+                                + collider.width / 2.0
+                                + rect.width / 2.0;
+                        }
+                        GameDirection::Right => {
+                            transform.translation.x = st_transform.translation.x
+                                - collider.width / 2.0
+                                - rect.width / 2.0;
+                        }
                     }
                 }
             }
-            }
-            
         }
     }
 }
