@@ -90,6 +90,14 @@ pub fn setup_ui_editor(
                 (),
             );
         });
+        button_children(class_node_menu_btn, gc, RightPanelButton::DeleteMap, |gc| {
+            text(
+                ["delete map"],
+                class_node_menu_btn_text,
+                gc,
+                (),
+            );
+        });
         button_children(class_node_menu_btn, gc, RightPanelButton::SaveMap, |gc| {
             text(
                 ["save map"],

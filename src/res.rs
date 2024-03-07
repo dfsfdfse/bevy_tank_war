@@ -21,8 +21,72 @@ pub enum RightPanelButton {
     SaveMap,
     NewMap,
     DeleteMap,
-    Back
+    Back,
 }
+
+#[derive(Default, Clone, Copy, PartialEq, Eq)]
+pub enum GameDirection {
+    #[default]
+    Up,
+    Down,
+    Left,
+    Right,
+}
+
+#[derive(Component)]
+pub struct Moving {
+    pub direction: GameDirection,
+    pub speed: f32,
+}
+
+impl Default for Moving {
+    fn default() -> Self {
+        Moving {
+            direction: GameDirection::Up,
+            speed: 2.0,
+        }
+    }
+}
+
+#[derive(Component)]
+pub struct Player {
+    pub id: i64,
+    pub index: usize,
+    pub level: usize,
+    pub direction_stack: Vec<GameDirection>,
+    pub keys_binding: Option<KeysBinding>,
+}
+
+impl Player {
+    pub fn new_player1() -> Self {
+        Player {
+            id: gen_id(),
+            index: 6,
+            level: 1,
+            direction_stack: vec![],
+            keys_binding: Some(PLAYER1_KEYS),
+        }
+    }
+
+    pub fn new_player2() -> Self {
+        Player {
+            id: gen_id(),
+            index: 7,
+            level: 1,
+            direction_stack: vec![],
+            keys_binding: Some(PLAYER2_KEYS),
+        }
+    }
+
+    pub fn is_player1(&self) -> bool {
+        self.index == 6
+    }
+
+    pub fn is_player2(&self) -> bool {
+        self.index == 7
+    }
+}
+
 ///清除实体的组件
 #[derive(Component)]
 pub struct Clear;
@@ -50,22 +114,6 @@ pub struct Block {
     pub col: usize,
     pub block: usize,
     pub operate: BlockOperate,
-}
-#[derive(Component, Clone, Copy, PartialEq)]
-pub struct FourBlock {
-    pub row: usize,
-    pub col: usize,
-    pub inner: [usize; 4],
-}
-
-impl Default for FourBlock {
-    fn default() -> Self {
-        FourBlock {
-            row: 99,
-            col: 99,
-            inner: [0, 0, 0, 0],
-        }
-    }
 }
 
 impl Default for Block {
@@ -129,6 +177,7 @@ pub struct InitialSettings {
     pub win_resolution: (f32, f32),
 }
 
+#[derive(Clone, Copy)]
 pub struct KeysBinding {
     pub up: KeyCode,
     pub down: KeyCode,

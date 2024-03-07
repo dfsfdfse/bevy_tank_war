@@ -4,13 +4,12 @@ use bevy::prelude::*;
 
 use crate::{
     res::{
-        Block, GameMapCollection, GameState, LastSelectInfo, NodeBlock, Relate, UISelectInfo,
-        GAME_ICON_ARROW_LEFT,
+        Block, GameMapCollection, GameState, LastSelectInfo, Moving, NodeBlock, Player, Relate,
+        UISelectInfo, GAME_ICON_ARROW_LEFT,
     },
     utils::{
         animate::{Animator, LoopStrategy},
         class::StyleCommand,
-        util::is_four,
         widget::{
             atlas_image, grid, image, node_children, sprite, sprite_children, sprite_sheet, text,
             GridInfo,
@@ -269,7 +268,19 @@ pub fn wd_load_game_map(
             ui_map_select.map_index
         };
         for block in gm_map.maps[index].to_blocks().iter() {
-            if is_four(block.block) {
+            if block.block == 6 {
+                sprite_sheet(
+                    class_sprite_sheet_block,
+                    gc,
+                    (block.clone(), Moving::default(), Player::new_player1()),
+                );
+            } else if block.block == 7 {
+                sprite_sheet(
+                    class_sprite_sheet_block,
+                    gc,
+                    (block.clone(), Moving::default(), Player::new_player2()),
+                );
+            } else if block.block == 8 {
                 sprite_sheet(class_sprite_sheet_block, gc, block.clone());
             } else if [3, 4, 5].contains(&block.block) {
                 wd_sprite_block(gc, block);
