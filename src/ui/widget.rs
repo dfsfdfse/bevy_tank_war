@@ -3,12 +3,17 @@ use std::{array::from_fn, time::Duration};
 use bevy::prelude::*;
 
 use crate::{
-    res::{Block, LastSelectInfo, NodeBlock, Relate, UISelectInfo, GAME_ICON_ARROW_LEFT},
+    res::{
+        Block, GameMapCollection, GameState, LastSelectInfo, NodeBlock, Relate, UISelectInfo,
+        GAME_ICON_ARROW_LEFT,
+    },
     utils::{
         animate::{Animator, LoopStrategy},
         class::StyleCommand,
+        util::is_four,
         widget::{
-            atlas_image, grid, image, node_children, sprite, text, GridInfo,
+            atlas_image, grid, image, node_children, sprite, sprite_children, sprite_sheet, text,
+            GridInfo,
         },
     },
 };
@@ -22,7 +27,7 @@ use super::class::{
         class_wd_node_block_container_select, class_wd_node_block_contianer_image,
         class_wd_node_block_item, class_wd_node_block_size, class_wd_node_block_size_inner,
     },
-    game_class::class_sprite_block,
+    game_class::{class_sprite_block, class_sprite_sheet_block},
 };
 
 pub fn wd_sprite_block(gc: &mut ChildBuilder, block: &Block) {
@@ -231,7 +236,8 @@ pub fn wd_update_node_block(
             };
             if [1, 2].contains(&ui_select_info.map_editor_block) {
                 let index = ui_select_info.map_editor_block - 1;
-                ui_select_info.map_editor_blocks_inner[index][node_block.index] = node_block.current;
+                ui_select_info.map_editor_blocks_inner[index][node_block.index] =
+                    node_block.current;
             }
             commands.set_style(entity, class_wd_node_block_item);
         }
@@ -248,4 +254,28 @@ pub fn wd_update_node_block(
             last_select_info.last_map_editor_block = Some(entity);
         }
     }
+}
+
+pub fn wd_load_game_map(
+    gc: &mut ChildBuilder,
+    gm_map: &GameMapCollection,
+    ui_map_select: &UISelectInfo,
+    gm_state: &State<GameState>,
+) {
+    sprite_children((), gc, (), |gc| {
+        let index = if *gm_state.get() == GameState::UIMapEditor {
+            ui_map_select.map_editor_level_index
+        } else {
+            ui_map_select.map_index
+        };
+        for block in gm_map.maps[index].to_blocks().iter() {
+            if is_four(block.block) {
+                sprite_sheet(class_sprite_sheet_block, gc, block.clone());
+            } else if [3, 4, 5].contains(&block.block) {
+                wd_sprite_block(gc, block);
+            } else {
+                sprite(class_sprite_block, gc, block.clone());
+            }
+        }
+    });
 }

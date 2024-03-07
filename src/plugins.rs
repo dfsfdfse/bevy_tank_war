@@ -49,6 +49,7 @@ impl Plugin for GamePlugin {
                     .with_dynamic_assets_file::<StandardDynamicAssetCollection>("load.assets.ron")
                     .load_collection::<GameSource>(),
             )
+            .add_systems(Startup, setup_camera)
             .add_systems(OnExit(GameState::UIMenu), despawn_screen::<Clear>)
             .add_systems(OnExit(GameState::UIGameEnter), despawn_screen::<Clear>)
             .add_systems(OnExit(GameState::UIMapEditor), despawn_screen::<Clear>)
@@ -75,6 +76,10 @@ impl Plugin for GamePlugin {
                     .run_if(in_state(GameState::UIMapEditor)),
             );
     }
+}
+
+pub fn setup_camera(mut commands: Commands){
+    commands.spawn(Camera2dBundle::default());
 }
 ///生成id用于关联查询
 pub fn gen_id() -> i64 {

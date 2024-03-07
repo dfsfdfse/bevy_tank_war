@@ -14,8 +14,7 @@ use super::class::menu_class::{
     class_node_root, class_node_tank_selector,
 };
 
-pub fn setup_ui_menu(mut commands: Commands) {
-    commands.spawn(Camera2dBundle::default());
+pub fn setup_ui_menu(commands: Commands) {
     node_root(class_node_root, commands, Clear, |gc| {
         node_children(class_node_game_panel, gc, (), |gc| {
             image(class_node_game_logo_image, gc, ());

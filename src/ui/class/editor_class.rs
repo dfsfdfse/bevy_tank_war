@@ -9,9 +9,34 @@ pub fn class_node_left_panel(mut style: Mut<Style>, mut background_color: Mut<Ba
     style.width = Val::Px(150.);
     style.height = Val::Percent(100.);
     style.display = Display::Flex;
-    style.display = Display::Flex;
     style.flex_direction = FlexDirection::Column;
     background_color.0 = Color::rgb_u8(30, 34, 41);
+}
+
+pub fn class_node_right_panel(mut style: Mut<Style>, mut background_color: Mut<BackgroundColor>) {
+    style.width = Val::Px(150.);
+    style.height = Val::Percent(100.);
+    style.position_type = PositionType::Absolute;
+    style.right = Val::Px(0.);
+    style.display = Display::Flex;
+    style.flex_direction = FlexDirection::Column;
+    style.align_items = AlignItems::Center;
+    background_color.0 = Color::rgb_u8(30, 34, 41);
+}
+
+pub fn class_node_menu_btn(mut style: Mut<Style>, mut background_color: Mut<BackgroundColor>) {
+    style.width = Val::Px(120.);
+    style.height = Val::Px(40.);
+    style.display = Display::Flex;
+    style.align_items = AlignItems::Center;
+    style.justify_content = JustifyContent::Center;
+    style.margin.top = Val::Px(15.);
+    background_color.0 = Color::rgb_u8(90, 90, 90);
+}
+
+pub fn class_node_menu_btn_text(mut text: Mut<Text>) {
+    text.sections[0].style.font_size = 22.0;
+    text.sections[0].style.color = Color::WHITE;
 }
 
 pub fn class_node_column_align_center(mut style: Mut<Style>) {

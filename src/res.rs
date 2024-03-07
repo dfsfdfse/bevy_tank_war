@@ -16,6 +16,13 @@ pub enum GameState {
     UIMapEditor,
 }
 /* -----------Component--------------- */
+#[derive(Component, Clone, Copy, Eq, PartialEq)]
+pub enum RightPanelButton {
+    SaveMap,
+    NewMap,
+    DeleteMap,
+    Back
+}
 ///清除实体的组件
 #[derive(Component)]
 pub struct Clear;

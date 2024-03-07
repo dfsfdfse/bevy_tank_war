@@ -2,13 +2,13 @@ use bevy::prelude::*;
 
 use crate::{
     res::{
-        Block, BlockOperate, Clear, GameMapCollection, LastSelectInfo, NodeBlock, UISelectInfo,
-        GAME_AREA_BLOCK_FOUR,
+        Block, BlockOperate, Clear, GameMapCollection, GameState, LastSelectInfo, NodeBlock,
+        RightPanelButton, UISelectInfo, GAME_AREA_BLOCK_FOUR,
     },
     utils::{
         class::StyleCommand,
-        util::{is_four, vec2_to_transform_pos},
-        widget::{node_children, node_root, sprite, text, GridItemInfo},
+        util::{is_four, save_map, vec2_to_transform_pos},
+        widget::{button_children, node_children, node_root, sprite, text, GridItemInfo},
     },
 };
 
@@ -18,19 +18,20 @@ use super::{
         editor_class::{
             class_node_collapse_item_default, class_node_collapse_item_hover,
             class_node_left_panel, class_node_map_name_style, class_node_map_name_text,
+            class_node_menu_btn, class_node_menu_btn_text, class_node_right_panel,
         },
         game_class::{class_sprite_block, class_sprite_sheet_block},
     },
-    widget::{wd_node_block, wd_setup_collapse_grid},
+    widget::{wd_load_game_map, wd_node_block, wd_setup_collapse_grid},
 };
 
 pub fn setup_ui_editor(
-    commands: Commands,
+    mut commands: Commands,
     gm_maps: Res<GameMapCollection>,
     mut select_info: ResMut<UISelectInfo>,
     mut last_select_info: ResMut<LastSelectInfo>,
 ) {
-    node_root(class_node_left_panel, commands, Clear, |gc| {
+    node_root(class_node_left_panel, commands.reborrow(), Clear, |gc| {
         wd_setup_collapse_grid("LEVEL", gm_maps.maps.len(), 1, 30., gc, |gc, r, c| {
             node_children(
                 (
@@ -80,17 +81,57 @@ pub fn setup_ui_editor(
             }
         });
     });
+    node_root(class_node_right_panel, commands.reborrow(), Clear, |gc| {
+        button_children(class_node_menu_btn, gc, RightPanelButton::NewMap, |gc| {
+            text(
+                ["new map"],
+                class_node_menu_btn_text,
+                gc,
+                (),
+            );
+        });
+        button_children(class_node_menu_btn, gc, RightPanelButton::SaveMap, |gc| {
+            text(
+                ["save map"],
+                class_node_menu_btn_text,
+                gc,
+                (),
+            );
+        });
+        button_children(class_node_menu_btn, gc, RightPanelButton::Back, |gc| {
+            text(
+                ["back menu"],
+                class_node_menu_btn_text,
+                gc,
+                (),
+            );
+        });
+    });
 }
 
 pub fn update_ui_editor(
     mut commands: Commands,
     query_event: Query<(&Interaction, &GridItemInfo), Changed<Interaction>>,
     query_entity: Query<Entity, (With<Interaction>, With<GridItemInfo>)>,
+    gm_map: Res<GameMapCollection>,
     mut ui_selector: ResMut<UISelectInfo>,
+    right_panel_button: Query<(&Interaction, &RightPanelButton), Changed<Interaction>>,
+    gm_state: Res<State<GameState>>,
+    mut next_state: ResMut<NextState<GameState>>,
+    gm_panel_entity: Query<Entity, (With<Sprite>, With<Clear>)>,
 ) {
+    let gm_panel = gm_panel_entity.single();
     for (interaction, grid_item) in query_event.iter() {
-        if *interaction == Interaction::Pressed {
+        if *interaction == Interaction::Pressed && ui_selector.map_editor_level_index != grid_item.0
+        {
+            println!("选择地图:{}", grid_item.0);
             ui_selector.map_editor_level_index = grid_item.0;
+            commands
+                .entity(gm_panel)
+                .despawn_descendants()
+                .with_children(|gc| {
+                    wd_load_game_map(gc, gm_map.as_ref(), &ui_selector, &gm_state);
+                });
         }
     }
     //优化：存储上次的选择的实体进行更新
@@ -99,6 +140,25 @@ pub fn update_ui_editor(
             commands.set_style(entity, class_node_collapse_item_hover);
         } else {
             commands.set_style(entity, class_node_collapse_item_default);
+        }
+    }
+
+    for (interaction, button) in right_panel_button.iter() {
+        if *interaction == Interaction::Pressed {
+            match *button {
+                RightPanelButton::NewMap => {
+                    println!("新建地图");
+                }
+                RightPanelButton::SaveMap => {
+                    save_map(&gm_map);
+                    println!("保存地图");
+                }
+                RightPanelButton::Back => {
+                    next_state.set(GameState::UIMenu);
+                    println!("返回菜单");
+                }
+                _ => {}
+            }
         }
     }
 }

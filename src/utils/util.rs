@@ -1,6 +1,7 @@
 use bevy::prelude::*;
+use serde_ron::to_string;
 
-use crate::res::{GAME_AREA_BLOCK, GAME_AREA_BLOCK_FOUR, INITIAL_SETTINGS};
+use crate::res::{GameMapCollection, GAME_AREA_BLOCK, GAME_AREA_BLOCK_FOUR, INITIAL_SETTINGS};
 ///将鼠标在屏幕上的坐标转换为世界坐标
 pub fn vec2_to_transform_pos(pos: Vec2) -> (f32, f32) {
     (
@@ -23,4 +24,9 @@ pub fn is_small(type_index: usize) -> bool {
 
 pub fn is_same_size_block(a: usize, b: usize) -> bool {
     (is_four(a) && is_four(b)) || (is_small(a) && is_small(b))
+}
+
+pub fn save_map(map: &GameMapCollection) {
+    let map_str = to_string(map).unwrap();
+    std::fs::write("assets/map.ron", map_str).unwrap();
 }
