@@ -1,6 +1,8 @@
 use bevy::prelude::*;
 
-use crate::res::{Block, GameSource, GAME_AREA_BLOCK, GAME_BLOCK_SIZE, GAME_SIZE};
+use crate::res::{
+    Block, GameDirection, GameSource, Moving, Player, GAME_AREA_BLOCK, GAME_BLOCK_SIZE, GAME_SIZE,
+};
 
 pub fn class_sprite_panel(
     mut sprite: Mut<Sprite>,
@@ -60,5 +62,56 @@ pub fn class_sprite_block(
     let (x, y) = block.to_pos();
     transform.translation.x = x;
     transform.translation.y = y;
-    transform.translation.z = 2.;
+    transform.translation.z = if block.block == 4 { 3. } else { 2. };
+}
+
+pub fn class_game_update(
+    mut transform: Mut<Transform>,
+    mut layout: Mut<TextureAtlas>,
+    mut tank: Mut<Moving>,
+    mut player: Mut<Player>,
+) {
+    let idx = (layout.index + 1) % 2;
+    let player = player.as_mut();
+    if let Some(dir) = player.direction_stack.last() {
+        tank.direction = *dir;
+        match tank.direction {
+            GameDirection::Up => {
+                layout.index = idx;
+                transform.translation.y += tank.speed as f32;
+            }
+            GameDirection::Down => {
+                layout.index = 2 + idx;
+                transform.translation.y -= tank.speed as f32;
+            }
+            GameDirection::Left => {
+                layout.index = 4 + idx;
+                transform.translation.x -= tank.speed as f32;
+            }
+            GameDirection::Right => {
+                layout.index = 6 + idx;
+                transform.translation.x += tank.speed as f32;
+            }
+        }
+        if let Some(last_direction) = player.last_turn_direction {
+            if last_direction != *dir {
+                player.last_turn_direction = Some(*dir);
+                let mod_v = 12.;
+                let mod_y = transform.translation.y % mod_v;
+                if mod_y > mod_v / 2. {
+                    transform.translation.y += mod_v - mod_y;
+                } else {
+                    transform.translation.y -= mod_y;
+                }
+                let mod_x = transform.translation.x % mod_v;
+                if mod_x > mod_v / 2. {
+                    transform.translation.x += mod_v - mod_x;
+                } else {
+                    transform.translation.x -= mod_x;
+                }
+            }
+        } else {
+            player.last_turn_direction = Some(*dir);
+        }
+    }
 }

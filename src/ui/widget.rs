@@ -4,8 +4,8 @@ use bevy::prelude::*;
 
 use crate::{
     res::{
-        Block, GameMapCollection, GameState, LastSelectInfo, Moving, NodeBlock, Player, Relate,
-        UISelectInfo, GAME_ICON_ARROW_LEFT,
+        Block, Colider, GameMapCollection, GameState, LastSelectInfo, Moving, NodeBlock, Player,
+        Relate, UISelectInfo, GAME_ICON_ARROW_LEFT,
     },
     utils::{
         animate::{Animator, LoopStrategy},
@@ -30,26 +30,24 @@ use super::class::{
 };
 
 pub fn wd_sprite_block(gc: &mut ChildBuilder, block: &Block) {
-    sprite(
-        class_sprite_block,
-        gc,
-        Block::new(block.row, block.col, block.block),
-    );
-    sprite(
-        class_sprite_block,
-        gc,
-        Block::new(block.row, block.col + 1, block.block),
-    );
-    sprite(
-        class_sprite_block,
-        gc,
-        Block::new(block.row + 1, block.col, block.block),
-    );
-    sprite(
-        class_sprite_block,
-        gc,
-        Block::new(block.row + 1, block.col + 1, block.block),
-    );
+    let _: [Entity; 4] = from_fn(|i| {
+        if [3, 4].contains(&block.block) {
+            sprite(
+                class_sprite_block,
+                gc,
+                Block::new(block.row + i / 2, block.col + i % 2, block.block),
+            )
+        } else {
+            sprite(
+                class_sprite_block,
+                gc,
+                (
+                    Block::new(block.row + i / 2, block.col + i % 2, block.block),
+                    Colider::new(block.block, 24., 24.),
+                ),
+            )
+        }
+    });
 }
 ///目前bevy支持的文字组件设置样式确实太垃圾,只能多层嵌套
 pub fn wd_setup_collapse_grid(
@@ -261,7 +259,9 @@ pub fn wd_load_game_map(
     ui_map_select: &UISelectInfo,
     gm_state: &State<GameState>,
 ) {
-    sprite_children((), gc, (), |gc| {
+    let mut colider = Colider::new(0, 624., 624.);
+    colider.container();
+    sprite_children((), gc, colider, |gc| {
         let index = if *gm_state.get() == GameState::UIMapEditor {
             ui_map_select.map_editor_level_index
         } else {
@@ -272,20 +272,38 @@ pub fn wd_load_game_map(
                 sprite_sheet(
                     class_sprite_sheet_block,
                     gc,
-                    (block.clone(), Moving::default(), Player::new_player1()),
+                    (block.clone(), Colider::new(block.block, 48., 48.)),
                 );
             } else if block.block == 7 {
                 sprite_sheet(
                     class_sprite_sheet_block,
                     gc,
-                    (block.clone(), Moving::default(), Player::new_player2()),
+                    (
+                        block.clone(),
+                        Moving::default(),
+                        Player::new_player1(),
+                        Colider::new(block.block, 48., 48.),
+                    ),
                 );
             } else if block.block == 8 {
-                sprite_sheet(class_sprite_sheet_block, gc, block.clone());
+                sprite_sheet(
+                    class_sprite_sheet_block,
+                    gc,
+                    (
+                        block.clone(),
+                        Moving::default(),
+                        Player::new_player2(),
+                        Colider::new(block.block, 48., 48.),
+                    ),
+                );
             } else if [3, 4, 5].contains(&block.block) {
                 wd_sprite_block(gc, block);
             } else {
-                sprite(class_sprite_block, gc, block.clone());
+                sprite(
+                    class_sprite_block,
+                    gc,
+                    (block.clone(), Colider::new(block.block, 24., 24.)),
+                );
             }
         }
     });

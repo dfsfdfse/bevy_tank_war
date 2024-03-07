@@ -48,13 +48,14 @@ impl Default for Moving {
     }
 }
 
-#[derive(Component)]
+#[derive(Component, Clone)]
 pub struct Player {
     pub id: i64,
     pub index: usize,
     pub level: usize,
     pub direction_stack: Vec<GameDirection>,
     pub keys_binding: Option<KeysBinding>,
+    pub last_turn_direction: Option<GameDirection>,
 }
 
 impl Player {
@@ -65,6 +66,7 @@ impl Player {
             level: 1,
             direction_stack: vec![],
             keys_binding: Some(PLAYER1_KEYS),
+            last_turn_direction: None,
         }
     }
 
@@ -75,6 +77,7 @@ impl Player {
             level: 1,
             direction_stack: vec![],
             keys_binding: Some(PLAYER2_KEYS),
+            last_turn_direction: None,
         }
     }
 
@@ -87,6 +90,36 @@ impl Player {
     }
 }
 
+#[derive(Component, Clone)]
+pub struct Colider {
+    pub index: usize,
+    pub width: f32,
+    pub height: f32,
+    pub filter: Vec<usize>,
+    pub is_container: bool,
+}
+
+impl Colider {
+    pub fn new(index: usize, width: f32, height: f32) -> Self {
+        Colider {
+            index,
+            width,
+            height,
+            filter: Vec::new(),
+            is_container: false,
+        }
+    }
+
+    pub fn add_filter(&mut self, filter: usize) -> &mut Self {
+        self.filter.push(filter);
+        self
+    }
+
+    pub fn container(&mut self) -> &mut Self {
+        self.is_container = true;
+        self
+    }
+}
 ///清除实体的组件
 #[derive(Component)]
 pub struct Clear;
