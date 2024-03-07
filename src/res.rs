@@ -28,14 +28,23 @@ impl Relate {
         Relate(gen_id())
     }
 }
+#[derive(Clone, PartialEq, Default, Debug, Copy, Eq)]
+pub enum BlockOperate {
+    Remove,
+    Add,
+    Change,
+    #[default]
+    None,
+}
 
-#[derive(Component, Clone, Debug, PartialEq, Eq, Hash)]
+#[derive(Component, Clone, Debug, PartialEq, Copy)]
 pub struct Block {
     pub row: usize,
     pub col: usize,
     pub block: usize,
+    pub operate: BlockOperate,
 }
-#[derive(Component, Clone, Copy, PartialEq, Eq)]
+#[derive(Component, Clone, Copy, PartialEq)]
 pub struct FourBlock {
     pub row: usize,
     pub col: usize,
@@ -58,13 +67,19 @@ impl Default for Block {
             row: 99,
             col: 99,
             block: 0,
+            operate: BlockOperate::None,
         }
     }
 }
 
 impl Block {
     pub fn new(row: usize, col: usize, block: usize) -> Self {
-        Block { row, col, block }
+        Block {
+            row,
+            col,
+            block,
+            operate: BlockOperate::None,
+        }
     }
 
     pub fn to_pos(&self) -> (f32, f32) {
@@ -113,13 +128,6 @@ pub struct KeysBinding {
     pub left: KeyCode,
     pub right: KeyCode,
     pub fire: KeyCode,
-}
-
-pub enum BlockState {
-    Remove,
-    Add,
-    Change,
-    Stay,
 }
 
 pub const INITIAL_SETTINGS: InitialSettings = InitialSettings {
@@ -261,15 +269,29 @@ pub struct GameMapCollection {
 #[derive(Resource)]
 pub struct HandleLoadMap(pub Handle<GameMapCollection>);
 ///界面中选择的信息
-#[derive(Resource, Default)]
+#[derive(Resource)]
 pub struct UISelectInfo {
     pub menu: usize,                   //菜单index
     pub map_index: usize,              //游戏选择的地图index
     pub map_editor_level_index: usize, //地图编辑器选择的地图index
     pub map_editor_block: usize,       //地图编辑器选择的块index
-    pub map_editor_blocks_inner: [[bool; 4]; 2],
+    pub map_editor_blocks_inner: [[usize; 4]; 2],
     pub map_editor_cursor: (usize, usize), //地图编辑器的光标位置大方块的 (row, col)
     pub show_line: bool,                   //是否显示光标的边框
+}
+
+impl Default for UISelectInfo {
+    fn default() -> Self {
+        Self {
+            menu: Default::default(),
+            map_index: Default::default(),
+            map_editor_level_index: Default::default(),
+            map_editor_block: Default::default(),
+            map_editor_blocks_inner: [[1; 4], [2; 4]],
+            map_editor_cursor: Default::default(),
+            show_line: Default::default(),
+        }
+    }
 }
 #[derive(Resource, Default)]
 pub struct LastSelectInfo {

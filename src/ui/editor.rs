@@ -1,11 +1,14 @@
 use bevy::prelude::*;
 
 use crate::{
-    res::{Block, BlockState, Clear, GameMapCollection, LastSelectInfo, NodeBlock, UISelectInfo},
+    res::{
+        Block, BlockOperate, Clear, GameMapCollection, LastSelectInfo, NodeBlock, UISelectInfo,
+        GAME_AREA_BLOCK_FOUR,
+    },
     utils::{
         class::StyleCommand,
-        util::{is_four, vec2_to_transform_pos},
-        widget::{node_children, node_root, text, GridItemInfo},
+        util::vec2_to_transform_pos,
+        widget::{node_children, node_root, sprite, text, GridItemInfo},
     },
 };
 
@@ -16,6 +19,7 @@ use super::{
             class_node_collapse_item_default, class_node_collapse_item_hover,
             class_node_left_panel, class_node_map_name_style, class_node_map_name_text,
         },
+        game_class::class_sprite_block,
     },
     widget::{wd_node_block, wd_setup_collapse_grid},
 };
@@ -103,13 +107,14 @@ pub fn update_ui_editor_brush(
     mut commands: Commands,
     mouse_event: Res<ButtonInput<MouseButton>>,
     mut ui_selector: ResMut<UISelectInfo>,
-    mut last_select_info: ResMut<LastSelectInfo>,
+    //mut last_select_info: ResMut<LastSelectInfo>,
     mut move_event: EventReader<CursorMoved>,
     mut gizmos: Gizmos,
     mut query_block: Query<(&mut Block, Entity)>,
     mut gm_maps: ResMut<GameMapCollection>,
-    mut gm_panel_entity: Query<Entity, (With<Sprite>, With<Clear>)>,
+    gm_panel_entity: Query<Entity, (With<Sprite>, With<Clear>)>,
 ) {
+    let panel_entity = gm_panel_entity.single();
     for evt in move_event.read() {
         let transform_pos = vec2_to_transform_pos(evt.position);
         if transform_pos.0 > -312.
@@ -156,62 +161,91 @@ pub fn update_ui_editor_brush(
             Color::RED,
         );
         if mouse_event.pressed(MouseButton::Left) {
-            /* let map_blocks = [
-                gm_maps.maps[ui_selector.map_editor_level_index].map
-                    [ui_selector.map_editor_cursor.0 * 2][ui_selector.map_editor_cursor.1 * 2],
-                gm_maps.maps[ui_selector.map_editor_level_index].map
-                    [ui_selector.map_editor_cursor.0 * 2][ui_selector.map_editor_cursor.1 * 2 + 1],
-                gm_maps.maps[ui_selector.map_editor_level_index].map
-                    [ui_selector.map_editor_cursor.0 * 2 + 1][ui_selector.map_editor_cursor.1 * 2],
-                gm_maps.maps[ui_selector.map_editor_level_index].map
-                    [ui_selector.map_editor_cursor.0 * 2 + 1]
-                    [ui_selector.map_editor_cursor.1 * 2 + 1],
-            ];
-            if [1, 2].contains(&ui_selector.map_editor_block) {
-                let mut states: Vec<BlockState> = vec![];
-                for (i, bool) in ui_selector.map_editor_blocks_inner
-                    [ui_selector.map_editor_block - 1]
-                    .iter()
-                    .enumerate()
-                {
-                    if *bool && map_blocks[i] != 0 {
-                        gm_maps.maps[ui_selector.map_editor_level_index].map
-                            [ui_selector.map_editor_cursor.0 * 2 + (i / 2) as usize]
-                            [ui_selector.map_editor_cursor.1 * 2 + (i % 2) as usize] = 0;
-                        states.push(BlockState::Remove);
-                    } else if !*bool {
-                        if is_four(map_blocks[i]) {
-                            
-                        }
-                        gm_maps.maps[ui_selector.map_editor_level_index].map
-                            [ui_selector.map_editor_cursor.0 * 2 + (i / 2) as usize]
-                            [ui_selector.map_editor_cursor.1 * 2 + (i % 2) as usize] =
-                            ui_selector.map_editor_block;
-                    }
+            let mut operator = vec![];
+            if !GAME_AREA_BLOCK_FOUR.contains(&ui_selector.map_editor_block) {
+                if GAME_AREA_BLOCK_FOUR.contains(
+                    &gm_maps.maps[ui_selector.map_editor_level_index].map
+                        [ui_selector.map_editor_cursor.0 * 2][ui_selector.map_editor_cursor.1 * 2],
+                ) {
+                    return;
                 }
-            } */
+                let select_block = if [1, 2].contains(&ui_selector.map_editor_block) {
+                    ui_selector.map_editor_blocks_inner[ui_selector.map_editor_block - 1]
+                } else {
+                    [ui_selector.map_editor_block; 4]
+                };
+                for (i, blk) in select_block.iter().enumerate() {
+                    let gm_block = gm_maps.maps[ui_selector.map_editor_level_index].map
+                        [ui_selector.map_editor_cursor.0 * 2 + (i / 2) as usize]
+                        [ui_selector.map_editor_cursor.1 * 2 + (i % 2) as usize];
+                    if *blk == gm_block {
+                        continue;
+                    }
+                    let mut block = Block::new(
+                        ui_selector.map_editor_cursor.0 * 2 + (i / 2) as usize,
+                        ui_selector.map_editor_cursor.1 * 2 + (i % 2) as usize,
+                        *blk,
+                    );
+                    if *blk == 0 {
+                        println!("有删除的了");
+                        println!(
+                            "{:?}",
+                            ui_selector.map_editor_blocks_inner[ui_selector.map_editor_block - 1]
+                        );
 
-            /* let mut spawn: Vec<Block> = vec![];
-            let mut delete = vec![];
-            let mut change: Vec<Block> = vec![];
-            if [1, 2].contains(&ui_selector.map_editor_block) {
-                for (index, block) in map_blocks.iter().enumerate() {
-                    if ui_selector.map_editor_blocks_inner[ui_selector.map_editor_block - 1][index]
-                        && *block != 0
+                        //删除
+                        block.operate = BlockOperate::Remove;
+                        println!("{:?}", block);
+                    } else if gm_block == 0 {
+                        //添加
+                        println!("有添加的了");
+                        block.operate = BlockOperate::Add;
+                    } else {
+                        println!("有替换的了");
+                        //替换
+                        block.operate = BlockOperate::Change;
+                    }
+                    operator.push(block);
+                }
+            } else {
+                
+            }
+            //添加
+            for block in operator.iter() {
+                if block.operate == BlockOperate::Add {
+                    gm_maps.maps[ui_selector.map_editor_level_index].map[block.row][block.col] =
+                        block.block;
+                    commands.entity(panel_entity).with_children(|gc| {
+                        sprite(class_sprite_block, gc, block.clone());
+                    });
+                }
+            }
+            for (mut block, entity) in query_block.iter_mut() {
+                //todo 优化跳过
+                //println!("{:?}", block.as_ref());
+                for b in operator.iter_mut() {
+                    if b.operate == BlockOperate::Remove && block.row == b.row && block.col == b.col
                     {
-                        delete.push((
-                            ui_selector.map_editor_cursor.0 * 2 + (index / 2) as usize,
-                            ui_selector.map_editor_cursor.1 * 2 + (index % 2) as usize,
-                        ));
-                    } else if is_four(*block) {
-                        delete.push((
-                            ui_selector.map_editor_cursor.0 * 2,
-                            ui_selector.map_editor_cursor.1 * 2,
-                        ));
+                        println!("删除");
+                        block.block = b.block;
+                        gm_maps.maps[ui_selector.map_editor_level_index].map[block.row]
+                            [block.col] = block.block;
+                        commands.entity(entity).despawn_recursive();
+                        operator.retain(|b| b.row != block.row && b.col != block.col);
+                        break;
+                    }
+                    if BlockOperate::Change == b.operate && block.row == b.row && block.col == b.col
+                    {
+                        println!("替换");
+                        block.block = b.block;
+                        gm_maps.maps[ui_selector.map_editor_level_index].map[block.row]
+                            [block.col] = b.block;
+                        commands.set_style(entity, class_sprite_block);
+                        operator.retain(|b| b.row != block.row && b.col != block.col);
                         break;
                     }
                 }
-            } */
+            }
         }
     }
 }
