@@ -1,3 +1,5 @@
+use std::time::Duration;
+
 use bevy::prelude::*;
 use bevy_asset_loader::asset_collection::AssetCollection;
 use serde::{Deserialize, Serialize};
@@ -33,7 +35,7 @@ pub enum GameDirection {
     Right,
 }
 
-#[derive(Component)]
+#[derive(Component, Clone)]
 pub struct Moving {
     pub direction: GameDirection,
     pub speed: f32,
@@ -54,17 +56,38 @@ impl Moving {
     }
 }
 
-#[derive(Component, Default)]
+#[derive(Component, Default, Clone)]
 pub struct Bullet {
+    pub index: usize,
     pub strength: bool,
     pub tank_pos: (f32, f32),
+    pub boom: bool,
 }
 
 impl Bullet {
-    pub fn new(strength: bool, tank_pos: (f32, f32)) -> Self {
+    pub fn new(player: &Player, player_pos: &Transform, player_mov: &Moving) -> Self {
         Bullet {
-            strength,
-            tank_pos,
+            index: player.index,
+            boom: false,
+            strength: player.level > 1,
+            tank_pos: match player_mov.direction {
+                GameDirection::Up => (
+                    player_pos.translation.x,
+                    player_pos.translation.y + 8.0,
+                ),
+                GameDirection::Down => (
+                    player_pos.translation.x,
+                    player_pos.translation.y - 8.0,
+                ),
+                GameDirection::Left => (
+                    player_pos.translation.x - 8.0,
+                    player_pos.translation.y,
+                ),
+                GameDirection::Right => (
+                    player_pos.translation.x + 8.0,
+                    player_pos.translation.y,
+                ),
+            }
         }
     }
 }
@@ -78,6 +101,7 @@ pub struct Player {
     pub keys_binding: Option<KeysBinding>,
     pub last_turn_direction: Option<GameDirection>,
     pub bullet: Option<Entity>,
+    pub shoot_time: Duration,
 }
 
 impl Player {
@@ -90,6 +114,7 @@ impl Player {
             keys_binding: Some(PLAYER1_KEYS),
             last_turn_direction: None,
             bullet: None,
+            shoot_time: Duration::from_secs(0),
         }
     }
 
@@ -102,6 +127,7 @@ impl Player {
             keys_binding: Some(PLAYER2_KEYS),
             last_turn_direction: None,
             bullet: None,
+            shoot_time: Duration::from_secs(0),
         }
     }
 
@@ -134,7 +160,11 @@ impl Colider {
         }
     }
 
-    pub fn new_bullet() -> Self {
+    pub fn is_home(&self) -> bool {
+        self.index == 6
+    }
+
+    /* pub fn new_bullet() -> Self {
         Colider {
             index: 10,
             width: 12.0,
@@ -142,11 +172,11 @@ impl Colider {
             filter: vec![5],
             is_container: false,
         }
-    }
+    } */
 
-    pub fn is_bullet(&self) -> bool {
+    /* pub fn is_bullet(&self) -> bool {
         self.index == 10
-    }
+    } */
 
     pub fn add_filter(&mut self, filter: usize) -> &mut Self {
         self.filter.push(filter);
