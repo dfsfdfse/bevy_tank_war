@@ -7,7 +7,7 @@ use std::{
 use serde::Deserialize;
 use serde_ron::de::from_bytes;
 fn main() {
-    println!("{}",(12./24.) as usize);
+    println!("{}",(13./24.) as usize);
     /* let map = load_ron();
     let start = (0, 0);
     let goal = (24, 12);

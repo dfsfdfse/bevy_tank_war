@@ -37,8 +37,8 @@ pub fn save_map(map: &GameMapCollection) {
 
 pub fn transform_to_pos(transform: &Transform) -> (usize, usize) {
     (
-        ((288. - transform.translation.y) / 24.) as usize,
-        ((288. + transform.translation.x) / 24.) as usize,
+        ((300. - transform.translation.y) / 24.) as usize,
+        ((300. + transform.translation.x) / 24.) as usize,
     )
 }
 

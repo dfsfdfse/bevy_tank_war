@@ -132,15 +132,15 @@ pub fn update_player(
         if let Some(last_direction) = player.last_turn_direction {
             if last_direction != *dir {
                 player.last_turn_direction = Some(*dir);
-                let mod_v = 8.;
+                let mod_v = 6.;
                 let mod_y = transform.translation.y % mod_v;
-                if mod_y > mod_v / 2. {
+                if mod_y > 4. {
                     transform.translation.y += mod_v - mod_y;
                 } else {
                     transform.translation.y -= mod_y;
                 }
                 let mod_x = transform.translation.x % mod_v;
-                if mod_x > mod_v / 2. {
+                if mod_x > 4. {
                     transform.translation.x += mod_v - mod_x;
                 } else {
                     transform.translation.x -= mod_x;
@@ -154,26 +154,40 @@ pub fn update_player(
 //a星算法移动到home为目标的最短路径
 pub fn update_ui_enemy(
     query_home: Query<(&Colider, &Transform), With<Block>>,
-    mut query_enemy: Query<(&mut Player, &Transform), With<Enemy>>,
+    mut query_enemy: Query<(&mut Player, &Transform, &mut Enemy)>,
     gm_map: Res<GameMapCollection>,
     select_info: Res<UISelectInfo>,
 ) {
     for (colider, transform) in query_home.iter() {
         if colider.index == 6 {
-            for (mut player, enemy_transform) in query_enemy.iter_mut() {
-                let home_pos = transform_to_pos(transform);
-                let enemy_pos = transform_to_pos(enemy_transform);
-                if let Some(path) =
-                    a_star(&gm_map.maps[select_info.map_index].map, enemy_pos, home_pos)
-                {
-                    println!("play_index: {},\n path: {:?}", player.index, path);
-                    if let Some(dir) = path_to_move_direction(path) {
-                        if player.direction_stack.is_empty() {
-                            player.direction_stack.push(dir);
-                            //println!("{:?}", player.direction_stack);
-                        } else {
-                            player.direction_stack[0] = dir;
-                            //println!("{:?}", player.direction_stack);
+            for (mut player, enemy_transform, mut enemy) in query_enemy.iter_mut() {
+                let mut search = false;
+                if let Some(start) = enemy.start_search_pos {
+                    if (enemy_transform.translation.x - start.0).abs() >= 24.
+                        || (enemy_transform.translation.y - start.1).abs() >= 24.
+                    {
+                        enemy.start_search_pos =
+                            Some((enemy_transform.translation.x, enemy_transform.translation.y));
+                        search = true;
+                    }
+                }
+                if enemy.start_search_pos.is_none() {
+                    enemy.start_search_pos =
+                        Some((enemy_transform.translation.x, enemy_transform.translation.y));
+                    search = true;
+                }
+                if search {
+                    let home_pos = transform_to_pos(transform);
+                    let enemy_pos = transform_to_pos(enemy_transform);
+                    if let Some(path) =
+                        a_star(&gm_map.maps[select_info.map_index].map, enemy_pos, home_pos)
+                    {
+                        if let Some(dir) = path_to_move_direction(path) {
+                            if player.direction_stack.is_empty() {
+                                player.direction_stack.push(dir);
+                            } else {
+                                player.direction_stack[0] = dir;
+                            }
                         }
                     }
                 }

@@ -304,7 +304,7 @@ pub fn wd_load_game_map(
                         block.clone(),
                         Moving::default(),
                         Player::new_enemy(block.block),
-                        Enemy {},
+                        Enemy::default(),
                         Colider::new(block.block, 48., 48.),
                     ),
                 );

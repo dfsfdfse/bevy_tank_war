@@ -85,10 +85,9 @@ pub enum EnemyState {
     Attack,
     Escape,
 }
-#[derive(Component, Clone)]
+#[derive(Component, Clone, Default)]
 pub struct Enemy {
-    //pub states: EnemyState,
-    //pub goal: Vec<Entity>,
+    pub start_search_pos: Option<(f32, f32)>,
 }
 
 #[derive(Component, Clone)]
