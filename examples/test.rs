@@ -7,15 +7,16 @@ use std::{
 use serde::Deserialize;
 use serde_ron::de::from_bytes;
 fn main() {
-    let map = load_ron();
+    println!("{}",(12./24.) as usize);
+    /* let map = load_ron();
     let start = (0, 0);
-    let goal = (23, 0);
+    let goal = (24, 12);
     let time_start = std::time::Instant::now();
     let path = a_star(&map.maps[0].map, start, goal);
     if let Some(path) = path {
         println!("{:?}", path);
     }
-    println!("Time: {}ms", time_start.elapsed().as_millis());
+    println!("Time: {}ms", time_start.elapsed().as_millis()); */
 }
 
 #[derive(Deserialize)]
@@ -37,7 +38,7 @@ fn load_ron() -> Maps {
 }
 
 fn can_pass(blk_type: usize) -> bool {
-    [0, 3, 4].contains(&blk_type)
+    [0, 3, 4, 6, 9, 10, 11].contains(&blk_type)
 }
 
 //曼哈顿距离
@@ -117,7 +118,7 @@ fn a_star(
             continue;
         }
 
-        for &(next_x, next_y) in &get_neighbors((x, y, 3, 3), grid) {
+        for &(next_x, next_y) in &get_neighbors((x, y, 2, 2), grid) {
             let f = cost + 1 + heuristic((next_x, next_y), goal);
             if dist[next_x][next_y].is_none() || f < dist[next_x][next_y].unwrap() {
                 heap.push((next_x, next_y, f));

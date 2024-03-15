@@ -26,7 +26,7 @@ pub enum RightPanelButton {
     Back,
 }
 
-#[derive(Default, Clone, Copy, PartialEq, Eq)]
+#[derive(Default, Clone, Copy, PartialEq, Eq, Debug)]
 pub enum GameDirection {
     #[default]
     Up,
@@ -71,25 +71,24 @@ impl Bullet {
             boom: false,
             strength: player.level > 1,
             tank_pos: match player_mov.direction {
-                GameDirection::Up => (
-                    player_pos.translation.x,
-                    player_pos.translation.y + 8.0,
-                ),
-                GameDirection::Down => (
-                    player_pos.translation.x,
-                    player_pos.translation.y - 8.0,
-                ),
-                GameDirection::Left => (
-                    player_pos.translation.x - 8.0,
-                    player_pos.translation.y,
-                ),
-                GameDirection::Right => (
-                    player_pos.translation.x + 8.0,
-                    player_pos.translation.y,
-                ),
-            }
+                GameDirection::Up => (player_pos.translation.x, player_pos.translation.y + 8.0),
+                GameDirection::Down => (player_pos.translation.x, player_pos.translation.y - 8.0),
+                GameDirection::Left => (player_pos.translation.x - 8.0, player_pos.translation.y),
+                GameDirection::Right => (player_pos.translation.x + 8.0, player_pos.translation.y),
+            },
         }
     }
+}
+#[derive(Clone)]
+pub enum EnemyState {
+    Search,
+    Attack,
+    Escape,
+}
+#[derive(Component, Clone)]
+pub struct Enemy {
+    //pub states: EnemyState,
+    //pub goal: Vec<Entity>,
 }
 
 #[derive(Component, Clone)]
@@ -98,6 +97,7 @@ pub struct Player {
     pub index: usize,
     pub level: usize,
     pub direction_stack: Vec<GameDirection>,
+    pub fire: bool,
     pub keys_binding: Option<KeysBinding>,
     pub last_turn_direction: Option<GameDirection>,
     pub bullet: Option<Entity>,
@@ -110,6 +110,7 @@ impl Player {
             id: gen_id(),
             index: 6,
             level: 1,
+            fire: false,
             direction_stack: vec![],
             keys_binding: Some(PLAYER1_KEYS),
             last_turn_direction: None,
@@ -123,6 +124,7 @@ impl Player {
             id: gen_id(),
             index: 7,
             level: 1,
+            fire: false,
             direction_stack: vec![],
             keys_binding: Some(PLAYER2_KEYS),
             last_turn_direction: None,
@@ -131,11 +133,12 @@ impl Player {
         }
     }
 
-    pub fn new_enemy() -> Self {
+    pub fn new_enemy(index: usize) -> Self {
         Player {
             id: gen_id(),
-            index: 8,
+            index,
             level: 1,
+            fire: false,
             direction_stack: vec![],
             keys_binding: None,
             last_turn_direction: None,

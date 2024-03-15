@@ -4,10 +4,13 @@ use bevy::prelude::*;
 
 use crate::{
     res::{
-        Bullet, Clear, Colider, GameDirection, GameMapCollection, GameState, Moving, Player,
-        UISelectInfo,
+        Block, Bullet, Clear, Colider, Enemy, GameDirection, GameMapCollection, GameState, Moving,
+        Player, UISelectInfo,
     },
-    utils::widget::{sprite, sprite_root},
+    utils::{
+        util::{a_star, path_to_move_direction, transform_to_pos},
+        widget::{sprite, sprite_root},
+    },
 };
 
 use super::{
@@ -26,15 +29,8 @@ pub fn setup_ui_game(
     });
 }
 
-pub fn update_ui_game(
-    mut commands: Commands,
-    mut query_player: Query<(&mut Player, &mut Transform, &mut TextureAtlas, &mut Moving)>,
-    key_event: Res<ButtonInput<KeyCode>>,
-    panel_entity: Query<Entity, (With<Clear>, With<Sprite>)>,
-    time: Res<Time>,
-) {
-    let panel_entity = panel_entity.single();
-    for (mut player, mut transform, mut layout, mut mov) in query_player.iter_mut() {
+pub fn update_ui_game(mut query_player: Query<&mut Player>, key_event: Res<ButtonInput<KeyCode>>) {
+    for mut player in query_player.iter_mut() {
         if let Some(keys) = player.keys_binding {
             if key_event.just_pressed(keys.up) {
                 player.direction_stack.push(GameDirection::Up);
@@ -58,13 +54,29 @@ pub fn update_ui_game(
                     .direction_stack
                     .retain(|&x| x != GameDirection::Right);
             }
+            if key_event.just_pressed(keys.fire) {
+                player.fire = true;
+            } else if key_event.just_released(keys.fire) {
+                player.fire = false;
+            }
+        }
+    }
+}
 
-            if key_event.pressed(keys.fire)
-                && (player.bullet.is_none()
-                    || (commands.get_entity(player.bullet.unwrap()).is_none()
-                        && player.shoot_time >= Duration::from_millis(600)))
-            {
-                player.shoot_time = Duration::from_secs(0);
+pub fn update_ui_game_shoot(
+    mut commands: Commands,
+    mut query_player: Query<(&mut Player, &mut Transform, &mut TextureAtlas, &mut Moving)>,
+    panel: Query<Entity, (With<Clear>, With<Sprite>)>,
+    time: Res<Time>,
+) {
+    for (mut player, mut transform, mut layout, mut mov) in query_player.iter_mut() {
+        if player.fire
+            && (player.bullet.is_none()
+                || (commands.get_entity(player.bullet.unwrap()).is_none()
+                    && player.shoot_time >= Duration::from_millis(600)))
+        {
+            player.shoot_time = Duration::from_secs(0);
+            for panel_entity in panel.iter() {
                 commands.entity(panel_entity).with_children(|gc| {
                     let id = sprite(
                         class_sprite_bullet,
@@ -77,13 +89,13 @@ pub fn update_ui_game(
                     player.bullet = Some(id);
                 });
             }
-            update_player(
-                transform.as_mut(),
-                layout.as_mut(),
-                mov.as_mut(),
-                player.as_mut(),
-            );
         }
+        update_player(
+            transform.as_mut(),
+            layout.as_mut(),
+            mov.as_mut(),
+            player.as_mut(),
+        );
         if player.bullet.is_some() && player.shoot_time < Duration::from_millis(600) {
             player.shoot_time += time.delta();
         }
@@ -120,7 +132,7 @@ pub fn update_player(
         if let Some(last_direction) = player.last_turn_direction {
             if last_direction != *dir {
                 player.last_turn_direction = Some(*dir);
-                let mod_v = 6.;
+                let mod_v = 8.;
                 let mod_y = transform.translation.y % mod_v;
                 if mod_y > mod_v / 2. {
                     transform.translation.y += mod_v - mod_y;
@@ -136,6 +148,36 @@ pub fn update_player(
             }
         } else {
             player.last_turn_direction = Some(*dir);
+        }
+    }
+}
+//a星算法移动到home为目标的最短路径
+pub fn update_ui_enemy(
+    query_home: Query<(&Colider, &Transform), With<Block>>,
+    mut query_enemy: Query<(&mut Player, &Transform), With<Enemy>>,
+    gm_map: Res<GameMapCollection>,
+    select_info: Res<UISelectInfo>,
+) {
+    for (colider, transform) in query_home.iter() {
+        if colider.index == 6 {
+            for (mut player, enemy_transform) in query_enemy.iter_mut() {
+                let home_pos = transform_to_pos(transform);
+                let enemy_pos = transform_to_pos(enemy_transform);
+                if let Some(path) =
+                    a_star(&gm_map.maps[select_info.map_index].map, enemy_pos, home_pos)
+                {
+                    println!("play_index: {},\n path: {:?}", player.index, path);
+                    if let Some(dir) = path_to_move_direction(path) {
+                        if player.direction_stack.is_empty() {
+                            player.direction_stack.push(dir);
+                            //println!("{:?}", player.direction_stack);
+                        } else {
+                            player.direction_stack[0] = dir;
+                            //println!("{:?}", player.direction_stack);
+                        }
+                    }
+                }
+            }
         }
     }
 }
