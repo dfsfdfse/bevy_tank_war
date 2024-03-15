@@ -3,7 +3,7 @@
     "layout": TextureAtlasLayout(tile_size_x: 48., tile_size_y: 48., columns: 1, rows: 1),
     "logo": Image(path: "image/logo.png"),
     "panel": Image(path: "image/background.png"),
-    "blocks": Files(paths: ["image/brick.png", "image/iron.png", "image/ice.png", "image/tree.png", "image/river1.png", "image/home.png", "image/tank_T1_0.png", "image/tank_T2_0.png", "image/tank_T2_1.png"]),
+    "blocks": Files(paths: ["image/brick.png", "image/iron.png", "image/ice.png", "image/tree.png", "image/river1.png", "image/home.png", "image/tank_T1_0.png", "image/tank_T2_0.png", "image/enemy_1_0.png" , "image/enemy_2_0.png", "image/enemy_3_0.png"]),
     "bullets": Files(paths: ["image/bullet_up.png", "image/bullet_down.png", "image/bullet_left.png", "image/bullet_right.png"]),
     "font": File(path: "prstartk.ttf"),
     "font_mono": File(path: "JetBrainsMono-Medium.ttf"),

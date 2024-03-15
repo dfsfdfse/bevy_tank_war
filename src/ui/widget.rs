@@ -296,6 +296,17 @@ pub fn wd_load_game_map(
                         Colider::new(block.block, 48., 48.),
                     ),
                 );
+            } else if [9, 10, 11].contains(&block.block) {
+                sprite_sheet(
+                    class_sprite_sheet_block,
+                    gc,
+                    (
+                        block.clone(),
+                        Moving::default(),
+                        Player::new_enemy(),
+                        Colider::new(block.block, 48., 48.),
+                    ),
+                );
             } else if [3, 4, 5].contains(&block.block) {
                 wd_sprite_block(gc, block);
             } else {

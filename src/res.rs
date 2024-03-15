@@ -131,6 +131,19 @@ impl Player {
         }
     }
 
+    pub fn new_enemy() -> Self {
+        Player {
+            id: gen_id(),
+            index: 8,
+            level: 1,
+            direction_stack: vec![],
+            keys_binding: None,
+            last_turn_direction: None,
+            bullet: None,
+            shoot_time: Duration::from_secs(0),
+        }
+    }
+
     pub fn is_player1(&self) -> bool {
         self.index == 6
     }
@@ -316,7 +329,7 @@ pub const GAME_MENU_TEXT_SIZE: f32 = 22.0;
 pub const GAME_ICON_ARROW_LEFT: &'static str = "\u{e7f9}";
 pub const GAME_ICON_ARROW_DOWN: &'static str = "\u{e873}";
 pub const GAME_AREA_BLOCK: [usize; 5] = [1, 2, 3, 4, 5];
-pub const GAME_AREA_BLOCK_FOUR: [usize; 3] = [6, 7, 8];
+pub const GAME_AREA_BLOCK_FOUR: [usize; 6] = [6, 7, 8, 9, 10, 11];
 /* ---------------Const--------------- */
 
 /* -----------Resource--------------- */
@@ -369,7 +382,7 @@ impl GameMap {
             for (c, block) in row.iter().enumerate() {
                 if stick.contains(&(r, c)) {
                     stick.retain(|(sy, sx)| !(*sy == r && *sx == c));
-                } else if [3, 4, 5, 6, 7, 8].contains(block) {
+                } else if [3, 4, 5, 6, 7, 8, 9, 10, 11].contains(block) {
                     blocks.push(Block::new(r, c, *block));
                     stick.push((r, c + 1));
                     stick.push((r + 1, c));
@@ -386,7 +399,7 @@ impl GameMap {
     }
 
     pub fn init_fixed(&mut self) {
-        let mut stick = vec![6, 7, 8];
+        let mut stick = vec![6, 7, 8, 9, 10, 11];
         for row in self.map.iter_mut() {
             for block in row.iter_mut() {
                 if stick.contains(block) {

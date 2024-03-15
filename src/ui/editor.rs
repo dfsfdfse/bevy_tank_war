@@ -56,9 +56,9 @@ pub fn setup_ui_editor(
                 },
             );
         });
-        wd_setup_collapse_grid("BLOCK", 5, 2, 75., gc, |gc, r, c| {
+        wd_setup_collapse_grid("BLOCK", 6, 2, 75., gc, |gc, r, c| {
             let index = r * 2 + c;
-            if index < 9 {
+            if index < 12 {
                 //解决初始化选择时存储
                 if index == select_info.map_editor_block {
                     let id = wd_node_block(
