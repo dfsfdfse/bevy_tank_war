@@ -52,13 +52,14 @@ fn get_neighbors(
     for (dx, dy) in directions.iter() {
         let nx = x as isize + dx;
         let ny = y as isize + dy;
+        let ey = if *dy == -1 { 0 } else { h - 1 };
+        let ex = if *dx == -1 { 0 } else { w - 1 };
         if nx >= 0 && nx < grid.len() as isize && ny >= 0 && ny < grid[0].len() as isize {
             let nx = nx as usize;
             let ny = ny as usize;
             let mut can_move = true;
             for i in 0..if *dx == 0 { h } else { w } {
                 if *dx == 0 {
-                    let ey = if *dy == -1 { 0 } else { h - 1 };
                     if nx + i >= grid[0].len()
                         || ny + ey >= grid.len()
                         || !can_pass(grid[nx + i][ny + ey])
@@ -67,7 +68,6 @@ fn get_neighbors(
                         break;
                     }
                 } else {
-                    let ex = if *dx == -1 { 0 } else { w - 1 };
                     if ny + i >= grid.len()
                         || nx + ex >= grid[0].len()
                         || !can_pass(grid[nx + ex][ny + i])
