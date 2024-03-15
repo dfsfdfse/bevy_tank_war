@@ -58,12 +58,20 @@ fn get_neighbors(
             let mut can_move = true;
             for i in 0..if *dx == 0 { h } else { w } {
                 if *dx == 0 {
-                    if ny + i >= grid[0].len() || !can_pass(grid[nx][ny + i]) {
+                    let ey = if *dy == -1 { 0 } else { h - 1 };
+                    if nx + i >= grid[0].len()
+                        || ny + ey >= grid.len()
+                        || !can_pass(grid[nx + i][ny + ey])
+                    {
                         can_move = false;
                         break;
                     }
                 } else {
-                    if nx + i >= grid.len() || !can_pass(grid[nx + i][ny]) {
+                    let ex = if *dx == -1 { 0 } else { w - 1 };
+                    if ny + i >= grid.len()
+                        || nx + ex >= grid[0].len()
+                        || !can_pass(grid[nx + ex][ny + i])
+                    {
                         can_move = false;
                         break;
                     }
