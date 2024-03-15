@@ -8,8 +8,8 @@ use serde::Deserialize;
 use serde_ron::de::from_bytes;
 fn main() {
     let map = load_ron();
-    let start = (4, 1);
-    let goal = (25, 1);
+    let start = (0, 0);
+    let goal = (24, 1);
     let time_start = std::time::Instant::now();
     let path = a_star(&map.maps[0].map, start, goal);
     println!("{:?}", path);
@@ -43,25 +43,38 @@ fn heuristic(a: (usize, usize), b: (usize, usize)) -> usize {
     ((a.0 as isize - b.0 as isize).abs() + (a.1 as isize - b.1 as isize).abs()) as usize
 }
 
-fn get_neighbors((x, y): (usize, usize), grid: &Vec<Vec<usize>>) -> Vec<(usize, usize)> {
+fn get_neighbors(
+    (x, y, w, h): (usize, usize, usize, usize),
+    grid: &Vec<Vec<usize>>,
+) -> Vec<(usize, usize)> {
     let mut neighbors = Vec::new();
-    if x > 0 && can_pass(grid[x - 1][y]) {
-        neighbors.push((x - 1, y));
-    }
-    if y > 0 && can_pass(grid[x][y - 1]) {
-        neighbors.push((x, y - 1));
-    }
-    if x < grid.len() - 1 && can_pass(grid[x + 1][y]) {
-        neighbors.push((x + 1, y));
-    }
-    if y < grid[0].len() - 1 && can_pass(grid[x][y + 1]) {
-        neighbors.push((x, y + 1));
+    let directions = [(0, -1), (-1, 0), (1, 0), (0, 1)];
+    for (dx, dy) in directions.iter() {
+        let nx = x as isize + dx;
+        let ny = y as isize + dy;
+        if nx >= 0 && nx < grid.len() as isize && ny >= 0 && ny < grid[0].len() as isize {
+            let nx = nx as usize;
+            let ny = ny as usize;
+            let mut can_move = true;
+            for i in 0..if *dx == 0 { h } else { w } {
+                if *dx == 0 {
+                    if ny + i >= grid[0].len() || !can_pass(grid[nx][ny + i]) {
+                        can_move = false;
+                        break;
+                    }
+                } else {
+                    if nx + i >= grid.len() || !can_pass(grid[nx + i][ny]) {
+                        can_move = false;
+                        break;
+                    }
+                }
+            }
+            if can_move {
+                neighbors.push((nx, ny));
+            }
+        }
     }
     neighbors
-}
-
-fn move_up() -> bool{
-    true
 }
 
 fn a_star(
@@ -94,7 +107,7 @@ fn a_star(
             continue;
         }
 
-        for &(next_x, next_y) in &get_neighbors((x, y), grid) {
+        for &(next_x, next_y) in &get_neighbors((x, y, 2, 2), grid) {
             let f = cost + 1 + heuristic((next_x, next_y), goal);
             if dist[next_x][next_y].is_none() || f < dist[next_x][next_y].unwrap() {
                 heap.push((next_x, next_y, f));
@@ -105,7 +118,3 @@ fn a_star(
     }
     None
 }
-
-
-
-fn tank_a_star(grid: &Vec<Vec<usize>>, start: &Vec<(usize, usize)>, goal: &Vec<(usize, usize)>) {}
