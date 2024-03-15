@@ -9,10 +9,12 @@ use serde_ron::de::from_bytes;
 fn main() {
     let map = load_ron();
     let start = (0, 0);
-    let goal = (24, 1);
+    let goal = (23, 0);
     let time_start = std::time::Instant::now();
     let path = a_star(&map.maps[0].map, start, goal);
-    println!("{:?}", path);
+    if let Some(path) = path {
+        println!("{:?}", path);
+    }
     println!("Time: {}ms", time_start.elapsed().as_millis());
 }
 
@@ -115,7 +117,7 @@ fn a_star(
             continue;
         }
 
-        for &(next_x, next_y) in &get_neighbors((x, y, 2, 2), grid) {
+        for &(next_x, next_y) in &get_neighbors((x, y, 3, 3), grid) {
             let f = cost + 1 + heuristic((next_x, next_y), goal);
             if dist[next_x][next_y].is_none() || f < dist[next_x][next_y].unwrap() {
                 heap.push((next_x, next_y, f));
