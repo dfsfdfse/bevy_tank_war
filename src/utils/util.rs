@@ -1,6 +1,6 @@
-use std::collections::{BinaryHeap, HashMap};
-
+use std::collections::{BinaryHeap, HashMap, HashSet};
 use bevy::prelude::*;
+use rand::seq::SliceRandom;
 use serde_ron::to_string;
 
 use crate::res::{
@@ -153,39 +153,76 @@ pub fn a_star(
     None
 }
 
-pub fn a_star_len(
+pub fn random_direction_neighbour(
+    (x, y, w, h): (usize, usize, usize, usize),
     grid: &Vec<Vec<usize>>,
-    start: (usize, usize),
-    path_len: usize,
-) -> Option<Vec<(usize, usize)>> {
-    let mut dist = vec![vec![None; grid[0].len()]; grid.len()];
-    let mut heap = BinaryHeap::new();
-    let mut parent: HashMap<(usize, usize), (usize, usize)> = HashMap::new();
-    dist[start.0][start.1] = Some(0);
-    heap.push((start.0, start.1, 0));
-    while let Some(node) = heap.pop() {
-        let (x, y, len) = node;
-        if len == path_len {
-            let mut path = Vec::new();
-            let mut current = (x, y);
-            while current != start {
-                path.push(current);
-                current = *parent.get(&current).unwrap();
+    visited: &mut HashSet<(usize, usize)>,
+) -> Option<(usize, usize)> {
+    let mut rng = rand::thread_rng();
+    let directions = vec![(0, -1), (-1, 0), (1, 0), (0, 1)];
+    let mut neighbors = Vec::new();
+    for (dx, dy) in directions.iter() {
+        let nx = x as isize + dx;
+        let ny = y as isize + dy;
+        let ey = if *dy == -1 { 0 } else { h - 1 };
+        let ex = if *dx == -1 { 0 } else { w - 1 };
+        if nx >= 0 && nx < grid.len() as isize && ny >= 0 && ny < grid[0].len() as isize {
+            let nx = nx as usize;
+            let ny = ny as usize;
+            let mut can_move = true;
+            for i in 0..if *dx == 0 { h } else { w } {
+                if *dx == 0 {
+                    if nx + i >= grid[0].len()
+                        || ny + ey >= grid.len()
+                        || !can_pass(grid[nx + i][ny + ey])
+                    {
+                        can_move = false;
+                        break;
+                    }
+                } else {
+                    if ny + i >= grid.len()
+                        || nx + ex >= grid[0].len()
+                        || !can_pass(grid[nx + ex][ny + i])
+                    {
+                        can_move = false;
+                        break;
+                    }
+                }
             }
-            path.push(start);
-            path.reverse();
-            return Some(path);
-        }
-        for &(next_x, next_y) in &get_neighbors((x, y, 2, 2), grid) {
-            let f = len + 1;
-            if dist[next_x][next_y].is_none() || f < dist[next_x][next_y].unwrap() {
-                heap.push((next_x, next_y, f));
-                dist[next_x][next_y] = Some(f);
-                parent.insert((next_x, next_y), (x, y));
+            if can_move {
+                neighbors.push((nx, ny));
             }
         }
     }
+    neighbors.retain(|x| !visited.contains(x));
+    if neighbors.len() > 0 {
+        //确保不会来回往返运动
+        let cur_pos = *neighbors.choose(&mut rng).unwrap();
+        visited.insert(cur_pos);
+        return Some(cur_pos);
+    }
     None
+}
+//随机不重复移动算法
+pub fn random_move(
+    grid: &Vec<Vec<usize>>,
+    start: (usize, usize),
+    path_len: usize,
+) -> Vec<(usize, usize)> {
+    let mut path = vec![start];
+    let mut visit = HashSet::new();
+    visit.insert(start);
+    let mut next = start;
+    for _ in 1..path_len {
+        let next_pos = random_direction_neighbour((next.0, next.1, 2, 2), grid, &mut visit);
+        if let Some(pos) = next_pos {
+            next = pos;
+            path.push(pos);
+        } else {
+            break;
+        }
+    }
+    path
 }
 
 /* ---------------------- */

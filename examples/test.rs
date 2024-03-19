@@ -1,22 +1,17 @@
-use std::{
-    collections::{BinaryHeap, HashMap},
-    fs::File,
-    io::Read,
-};
+use std::{fs::File, io::Read};
 
+use bevy_tank::utils::util::random_move;
 use serde::Deserialize;
 use serde_ron::de::from_bytes;
 fn main() {
-    println!("{}",(13./24.) as usize);
-    /* let map = load_ron();
+    //println!("{}",(13./24.) as usize);
+    let map = load_ron();
     let start = (0, 0);
-    let goal = (24, 12);
+    //let goal = (24, 12);
     let time_start = std::time::Instant::now();
-    let path = a_star(&map.maps[0].map, start, goal);
-    if let Some(path) = path {
-        println!("{:?}", path);
-    }
-    println!("Time: {}ms", time_start.elapsed().as_millis()); */
+    let path = random_move(&map.maps[0].map, start, 10);
+    println!("{:?}", path);
+    println!("Time: {}ms", time_start.elapsed().as_millis());
 }
 
 #[derive(Deserialize)]
@@ -37,7 +32,7 @@ fn load_ron() -> Maps {
     from_bytes(contents.as_bytes()).unwrap()
 }
 
-fn can_pass(blk_type: usize) -> bool {
+/* fn can_pass(blk_type: usize) -> bool {
     [0, 3, 4, 6, 9, 10, 11].contains(&blk_type)
 }
 
@@ -129,3 +124,4 @@ fn a_star(
     }
     None
 }
+ */

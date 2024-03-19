@@ -4,7 +4,7 @@ use bevy::prelude::*;
 use bevy_asset_loader::asset_collection::AssetCollection;
 use serde::{Deserialize, Serialize};
 
-use crate::{plugins::gen_id, utils::util::a_star_len};
+use crate::plugins::gen_id;
 
 ///全局游戏状态
 #[derive(Default, States, Debug, Hash, PartialEq, Eq, Clone)]
@@ -94,14 +94,6 @@ pub enum EnemyState {
 #[derive(Component, Clone, Default)]
 pub struct Enemy {
     pub start_search_pos: Option<(f32, f32)>,
-}
-
-impl Enemy {
-    pub fn rand_path(&mut self, grid: &Vec<Vec<usize>>){
-        if let Some(start) = self.start_search_pos{
-            
-        }
-    }
 }
 
 #[derive(Component, Clone)]
