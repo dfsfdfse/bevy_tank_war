@@ -82,7 +82,7 @@ pub fn update_ui_game_shoot(
                         class_sprite_bullet,
                         gc,
                         (
-                            Moving::new(mov.direction, if player.level > 1 { 16. } else { 8. }),
+                            Moving::new(mov.direction, player.level as f32 * 8.),
                             Bullet::new(&player, &transform, &mov),
                         ),
                     );
@@ -111,36 +111,38 @@ pub fn update_player(
     let idx = (layout.index + 1) % 2;
     if let Some(dir) = player.direction_stack.last() {
         tank.direction = *dir;
+        //tank.speed = player.speed as f32;
+        tank.run_speed = tank.speed;
         match tank.direction {
             GameDirection::Up => {
                 layout.index = idx;
-                transform.translation.y += tank.speed as f32;
+                //transform.translation.y += tank.speed as f32;
             }
             GameDirection::Down => {
                 layout.index = 2 + idx;
-                transform.translation.y -= tank.speed as f32;
+                //transform.translation.y -= tank.speed as f32;
             }
             GameDirection::Left => {
                 layout.index = 4 + idx;
-                transform.translation.x -= tank.speed as f32;
+                //transform.translation.x -= tank.speed as f32;
             }
             GameDirection::Right => {
                 layout.index = 6 + idx;
-                transform.translation.x += tank.speed as f32;
+                //transform.translation.x += tank.speed as f32;
             }
         }
-        if let Some(last_direction) = player.last_turn_direction {
+        /* if let Some(last_direction) = player.last_turn_direction {
             if last_direction != *dir {
                 player.last_turn_direction = Some(*dir);
                 let mod_v = 6.;
                 let mod_y = transform.translation.y % mod_v;
-                if mod_y > 4. {
+                if mod_y > mod_v / 2. {
                     transform.translation.y += mod_v - mod_y;
                 } else {
                     transform.translation.y -= mod_y;
                 }
                 let mod_x = transform.translation.x % mod_v;
-                if mod_x > 4. {
+                if mod_x > mod_v / 2. {
                     transform.translation.x += mod_v - mod_x;
                 } else {
                     transform.translation.x -= mod_x;
@@ -148,7 +150,9 @@ pub fn update_player(
             }
         } else {
             player.last_turn_direction = Some(*dir);
-        }
+        } */
+    } else {
+        tank.run_speed = 0.;
     }
 }
 //a星算法移动到home为目标的最短路径
@@ -198,93 +202,129 @@ pub fn update_ui_enemy(
 
 //todo 简化代码
 pub fn update_check_collision(
-    mut query_movable: Query<(&mut Transform, &Colider, &Moving), With<Moving>>,
+    mut query_movable: Query<(&mut Transform, &Colider, &mut Moving), With<Moving>>,
     query_colider: Query<(&Transform, &Colider), Without<Moving>>,
 ) {
     let mut iter = query_movable.iter_mut().collect::<Vec<_>>();
     for i in 0..iter.len() {
         let rh = iter[i].1.height / 2.0;
         let rw = iter[i].1.width / 2.0;
-        for (st_transform, collider) in query_colider.iter() {
+        let mut block_speed = false;
+        'out: for (st_transform, collider) in query_colider.iter() {
             let mv_top_edge = iter[i].0.translation.y + rh;
             let mv_bottom_edge = iter[i].0.translation.y - rh;
             let mv_left_edge = iter[i].0.translation.x - rw;
             let mv_right_edge = iter[i].0.translation.x + rw;
+
             if collider.is_container {
-                match iter[i].2.direction {
-                    GameDirection::Up => {
-                        if mv_top_edge > collider.height / 2.0 {
-                            iter[i].0.translation.y = collider.height / 2.0 - rh;
-                        }
-                    }
-                    GameDirection::Down => {
-                        if mv_bottom_edge < -collider.height / 2.0 {
-                            iter[i].0.translation.y = -collider.height / 2.0 + rh;
-                        }
-                    }
-                    GameDirection::Left => {
-                        if mv_left_edge < -collider.width / 2.0 {
-                            iter[i].0.translation.x = -collider.width / 2.0 + rw;
-                        }
-                    }
-                    GameDirection::Right => {
-                        if mv_right_edge > collider.width / 2.0 {
-                            iter[i].0.translation.x = collider.width / 2.0 - rw;
-                        }
-                    }
-                }
+                block_speed = match iter[i].2.direction {
+                    GameDirection::Up => mv_top_edge >= collider.height / 2.0,
+                    GameDirection::Down => mv_bottom_edge <= -collider.height / 2.0,
+                    GameDirection::Left => mv_left_edge <= -collider.width / 2.0,
+                    GameDirection::Right => mv_right_edge >= collider.width / 2.0,
+                };
             } else {
-                if !collider.is_container
-                    && (mv_top_edge > st_transform.translation.y - collider.height / 2.0
-                        && mv_bottom_edge < st_transform.translation.y + collider.height / 2.0
-                        && mv_right_edge > st_transform.translation.x - collider.width / 2.0
-                        && mv_left_edge < st_transform.translation.x + collider.width / 2.0)
-                {
-                    match iter[i].2.direction {
-                        GameDirection::Up => {
-                            iter[i].0.translation.y =
-                                st_transform.translation.y - collider.height / 2.0 - rh;
-                        }
-                        GameDirection::Down => {
-                            iter[i].0.translation.y =
-                                st_transform.translation.y + collider.height / 2.0 + rh;
-                        }
-                        GameDirection::Left => {
-                            iter[i].0.translation.x =
-                                st_transform.translation.x + collider.width / 2.0 + rw;
-                        }
-                        GameDirection::Right => {
-                            iter[i].0.translation.x =
-                                st_transform.translation.x - collider.width / 2.0 - rw;
-                        }
-                    }
-                }
-            }
-        }
-        for j in i + 1..iter.len() {
-            let jh = iter[j].1.height / 2.0;
-            let jw = iter[j].1.width / 2.0;
-            if iter[i].0.translation.y + rh > iter[j].0.translation.y - jh
-                && iter[i].0.translation.y - rh < iter[j].0.translation.y + jh
-                && iter[i].0.translation.x + rw > iter[j].0.translation.x - jw
-                && iter[i].0.translation.x - rw < iter[j].0.translation.x + jw
-            {
                 match iter[i].2.direction {
                     GameDirection::Up => {
-                        iter[i].0.translation.y = iter[j].0.translation.y - jh - rh;
+                        if mv_top_edge >= st_transform.translation.y - collider.height / 2.0
+                            && mv_left_edge < st_transform.translation.x + collider.width / 2.0
+                            && mv_right_edge > st_transform.translation.x - collider.width / 2.0
+                            && mv_bottom_edge < st_transform.translation.y + collider.height / 2.0
+                        {
+                            block_speed = true;
+                            break 'out;
+                        }
                     }
                     GameDirection::Down => {
-                        iter[i].0.translation.y = iter[j].0.translation.y + jh + rh;
+                        if mv_bottom_edge <= st_transform.translation.y + collider.height / 2.0
+                            && mv_left_edge < st_transform.translation.x + collider.width / 2.0
+                            && mv_right_edge > st_transform.translation.x - collider.width / 2.0
+                            && mv_top_edge > st_transform.translation.y - collider.height / 2.0
+                        {
+                            block_speed = true;
+                            break 'out;
+                        }
                     }
                     GameDirection::Left => {
-                        iter[i].0.translation.x = iter[j].0.translation.x + jw + rw;
+                        if mv_left_edge <= st_transform.translation.x + collider.width / 2.0
+                            && mv_top_edge > st_transform.translation.y - collider.height / 2.0
+                            && mv_bottom_edge < st_transform.translation.y + collider.height / 2.0
+                            && mv_right_edge > st_transform.translation.x - collider.width / 2.0
+                        {
+                            block_speed = true;
+                            break 'out;
+                        }
                     }
                     GameDirection::Right => {
-                        iter[i].0.translation.x = iter[j].0.translation.x - jw - rw;
+                        if mv_right_edge >= st_transform.translation.x - collider.width / 2.0
+                            && mv_top_edge > st_transform.translation.y - collider.height / 2.0
+                            && mv_bottom_edge < st_transform.translation.y + collider.height / 2.0
+                            && mv_left_edge < st_transform.translation.x + collider.width / 2.0
+                        {
+                            block_speed = true;
+                            break 'out;
+                        }
                     }
+                };
+            }
+            for j in 0..iter.len() {
+                let jh = iter[j].1.height / 2.0;
+                let jw = iter[j].1.width / 2.0;
+                if iter[i].1 == iter[j].1{
+                    continue;
                 }
+                match iter[i].2.direction {
+                    GameDirection::Up => {
+                        if iter[i].0.translation.y + rh >= iter[j].0.translation.y - jh
+                            && iter[i].0.translation.y - rh < iter[j].0.translation.y + jh
+                            && iter[i].0.translation.x + rw > iter[j].0.translation.x - jw
+                            && iter[i].0.translation.x - rw < iter[j].0.translation.x + jw
+                        {
+                            block_speed = true;
+                            break 'out;
+                        }
+                    }
+                    GameDirection::Down => {
+                        if iter[i].0.translation.y - rh <= iter[j].0.translation.y + jh
+                            && iter[i].0.translation.y + rh > iter[j].0.translation.y - jh
+                            && iter[i].0.translation.x + rw > iter[j].0.translation.x - jw
+                            && iter[i].0.translation.x - rw < iter[j].0.translation.x + jw
+                        {
+                            block_speed = true;
+                            break 'out;
+                        }
+                    }
+                    GameDirection::Left => {
+                        if iter[i].0.translation.x - rw <= iter[j].0.translation.x + jw
+                            && iter[i].0.translation.x + rw > iter[j].0.translation.x - jw
+                            && iter[i].0.translation.y + rh > iter[j].0.translation.y - jh
+                            && iter[i].0.translation.y - rh < iter[j].0.translation.y + jh
+                        {
+                            block_speed = true;
+                            break 'out;
+                        }
+                    }
+                    GameDirection::Right => {
+                        if iter[i].0.translation.x + rw >= iter[j].0.translation.x - jw
+                            && iter[i].0.translation.x - rw < iter[j].0.translation.x + jw
+                            && iter[i].0.translation.y + rh > iter[j].0.translation.y - jh
+                            && iter[i].0.translation.y - rh < iter[j].0.translation.y + jh
+                        {
+                            block_speed = true;
+                            break 'out;
+                        }
+                    }
+                };
             }
         }
+
+        iter[i].2.run_speed = if block_speed { 0. } else { iter[i].2.run_speed };
+        match iter[i].2.direction {
+            GameDirection::Up => iter[i].0.translation.y += iter[i].2.run_speed,
+            GameDirection::Down => iter[i].0.translation.y -= iter[i].2.run_speed,
+            GameDirection::Left => iter[i].0.translation.x -= iter[i].2.run_speed,
+            GameDirection::Right => iter[i].0.translation.x += iter[i].2.run_speed,
+        };
     }
 }
 //todo 简化代码

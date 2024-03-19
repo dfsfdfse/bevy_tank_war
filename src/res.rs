@@ -39,27 +39,33 @@ pub enum GameDirection {
 pub struct Moving {
     pub direction: GameDirection,
     pub speed: f32,
+    pub run_speed: f32,
 }
 
 impl Default for Moving {
     fn default() -> Self {
         Moving {
             direction: GameDirection::Up,
-            speed: 2.0,
+            speed: 0.,
+            run_speed: 0.,
         }
     }
 }
 
 impl Moving {
     pub fn new(direction: GameDirection, speed: f32) -> Self {
-        Moving { direction, speed }
+        Moving {
+            direction,
+            speed,
+            run_speed: 0.,
+        }
     }
 }
 
 #[derive(Component, Default, Clone)]
 pub struct Bullet {
     pub index: usize,
-    pub strength: bool,
+    pub level: usize,
     pub tank_pos: (f32, f32),
     pub boom: bool,
 }
@@ -69,7 +75,7 @@ impl Bullet {
         Bullet {
             index: player.index,
             boom: false,
-            strength: player.level > 1,
+            level: player.level,
             tank_pos: match player_mov.direction {
                 GameDirection::Up => (player_pos.translation.x, player_pos.translation.y + 8.0),
                 GameDirection::Down => (player_pos.translation.x, player_pos.translation.y - 8.0),
@@ -155,7 +161,7 @@ impl Player {
     }
 }
 
-#[derive(Component, Clone)]
+#[derive(Component, Clone, PartialEq)]
 pub struct Colider {
     pub index: usize,
     pub width: f32,

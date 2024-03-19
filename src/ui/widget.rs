@@ -4,8 +4,7 @@ use bevy::prelude::*;
 
 use crate::{
     res::{
-        Block, Colider, Enemy, GameMapCollection, GameState, LastSelectInfo, Moving, NodeBlock,
-        Player, Relate, UISelectInfo, GAME_ICON_ARROW_LEFT,
+        Block, Colider, Enemy, GameDirection, GameMapCollection, GameState, LastSelectInfo, Moving, NodeBlock, Player, Relate, UISelectInfo, GAME_ICON_ARROW_LEFT
     },
     utils::{
         animate::{Animator, LoopStrategy},
@@ -280,7 +279,7 @@ pub fn wd_load_game_map(
                     gc,
                     (
                         block.clone(),
-                        Moving::default(),
+                        Moving::new(GameDirection::Up, 2.),
                         Player::new_player1(),
                         Colider::new(block.block, 48., 48.),
                     ),
@@ -291,7 +290,7 @@ pub fn wd_load_game_map(
                     gc,
                     (
                         block.clone(),
-                        Moving::default(),
+                        Moving::new(GameDirection::Up, 2.),
                         Player::new_player2(),
                         Colider::new(block.block, 48., 48.),
                     ),
@@ -302,7 +301,7 @@ pub fn wd_load_game_map(
                     gc,
                     (
                         block.clone(),
-                        Moving::default(),
+                        Moving::new(GameDirection::Down, 2.),
                         Player::new_enemy(block.block),
                         Enemy::default(),
                         Colider::new(block.block, 48., 48.),
