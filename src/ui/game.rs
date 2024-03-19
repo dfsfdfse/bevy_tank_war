@@ -131,10 +131,11 @@ pub fn update_player(
                 //transform.translation.x += tank.speed as f32;
             }
         }
-        /* if let Some(last_direction) = player.last_turn_direction {
+        //todo 解决2个player碰撞一起同时移动的问题可能和update_check_collision会有冲突
+        if let Some(last_direction) = player.last_turn_direction {
             if last_direction != *dir {
                 player.last_turn_direction = Some(*dir);
-                let mod_v = 6.;
+                let mod_v = 12.;
                 let mod_y = transform.translation.y % mod_v;
                 if mod_y > mod_v / 2. {
                     transform.translation.y += mod_v - mod_y;
@@ -150,7 +151,7 @@ pub fn update_player(
             }
         } else {
             player.last_turn_direction = Some(*dir);
-        } */
+        }
     } else {
         tank.run_speed = 0.;
     }
