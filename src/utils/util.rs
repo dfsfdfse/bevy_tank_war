@@ -152,4 +152,40 @@ pub fn a_star(
     }
     None
 }
+
+pub fn a_star_len(
+    grid: &Vec<Vec<usize>>,
+    start: (usize, usize),
+    path_len: usize,
+) -> Option<Vec<(usize, usize)>> {
+    let mut dist = vec![vec![None; grid[0].len()]; grid.len()];
+    let mut heap = BinaryHeap::new();
+    let mut parent: HashMap<(usize, usize), (usize, usize)> = HashMap::new();
+    dist[start.0][start.1] = Some(0);
+    heap.push((start.0, start.1, 0));
+    while let Some(node) = heap.pop() {
+        let (x, y, len) = node;
+        if len == path_len {
+            let mut path = Vec::new();
+            let mut current = (x, y);
+            while current != start {
+                path.push(current);
+                current = *parent.get(&current).unwrap();
+            }
+            path.push(start);
+            path.reverse();
+            return Some(path);
+        }
+        for &(next_x, next_y) in &get_neighbors((x, y, 2, 2), grid) {
+            let f = len + 1;
+            if dist[next_x][next_y].is_none() || f < dist[next_x][next_y].unwrap() {
+                heap.push((next_x, next_y, f));
+                dist[next_x][next_y] = Some(f);
+                parent.insert((next_x, next_y), (x, y));
+            }
+        }
+    }
+    None
+}
+
 /* ---------------------- */
