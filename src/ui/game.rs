@@ -200,7 +200,7 @@ pub fn update_ui_enemy(
     }
 }
 
-//todo 简化代码
+//todo 简化代码 转向矫正
 pub fn update_check_collision(
     mut query_movable: Query<(&mut Transform, &Colider, &mut Moving), With<Moving>>,
     query_colider: Query<(&Transform, &Colider), Without<Moving>>,
@@ -223,6 +223,9 @@ pub fn update_check_collision(
                     GameDirection::Left => mv_left_edge <= -collider.width / 2.0,
                     GameDirection::Right => mv_right_edge >= collider.width / 2.0,
                 };
+                if block_speed {
+                    break 'out;
+                }
             } else {
                 match iter[i].2.direction {
                     GameDirection::Up => {
@@ -270,7 +273,7 @@ pub fn update_check_collision(
             for j in 0..iter.len() {
                 let jh = iter[j].1.height / 2.0;
                 let jw = iter[j].1.width / 2.0;
-                if iter[i].1 == iter[j].1{
+                if iter[i].1 == iter[j].1 {
                     continue;
                 }
                 match iter[i].2.direction {
