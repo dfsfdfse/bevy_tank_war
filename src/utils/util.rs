@@ -1,4 +1,4 @@
-use std::collections::{BinaryHeap, HashMap, HashSet};
+use std::collections::{BinaryHeap, HashMap};
 use bevy::prelude::*;
 use rand::seq::SliceRandom;
 use serde_ron::to_string;
@@ -156,7 +156,7 @@ pub fn a_star(
 pub fn random_direction_neighbour(
     (x, y, w, h): (usize, usize, usize, usize),
     grid: &Vec<Vec<usize>>,
-    visited: &mut HashSet<(usize, usize)>,
+    visited: &mut Vec<(usize, usize)>,
 ) -> Option<(usize, usize)> {
     let mut rng = rand::thread_rng();
     let directions = vec![(0, -1), (-1, 0), (1, 0), (0, 1)];
@@ -198,7 +198,6 @@ pub fn random_direction_neighbour(
     if neighbors.len() > 0 {
         //确保不会来回往返运动
         let cur_pos = *neighbors.choose(&mut rng).unwrap();
-        visited.insert(cur_pos);
         return Some(cur_pos);
     }
     None
@@ -210,15 +209,11 @@ pub fn random_move(
     path_len: usize,
 ) -> Vec<(usize, usize)> {
     let mut path = vec![start];
-    let mut visit = HashSet::new();
-    visit.insert(start);
     let mut next = start;
-    for _ in 1..path_len {
-        let next_pos = random_direction_neighbour((next.0, next.1, 2, 2), grid, &mut visit);
-        if let Some(pos) = next_pos {
-            next = pos;
-            path.push(pos);
-        } else {
+    while let Some(nt) = random_direction_neighbour((next.0, next.1, 2, 2), grid, &mut path) {
+        next = nt;
+        path.push(nt);
+        if path.len() == path_len {
             break;
         }
     }
