@@ -35,11 +35,28 @@ pub fn save_map(map: &GameMapCollection) {
     std::fs::write("assets/map.ron", map_str).unwrap();
 }
 
+pub fn position_to_pos(position: (f32, f32)) -> (usize, usize) {
+    (
+        ((300. - position.1) / 24.) as usize,
+        ((300. + position.0) / 24.) as usize,
+    )
+}
+
 pub fn transform_to_pos(transform: &Transform) -> (usize, usize) {
     (
         ((300. - transform.translation.y) / 24.) as usize,
         ((300. + transform.translation.x) / 24.) as usize,
     )
+}
+
+pub fn point_direction(start: (usize, usize), end: (usize, usize)) -> Option<GameDirection> {
+    match (start.0 as isize - end.0 as isize, start.1 as isize - end.1 as isize) {
+        (0, 1) => Some(GameDirection::Left),
+        (0, -1) => Some(GameDirection::Right),
+        (1, 0) => Some(GameDirection::Up),
+        (-1, 0) => Some(GameDirection::Down),
+        _ => None,
+    }
 }
 
 pub fn path_to_move_direction(path: Vec<(usize, usize)>) -> Option<GameDirection> {
@@ -208,7 +225,7 @@ pub fn random_move(
     start: (usize, usize),
     path_len: usize,
 ) -> Vec<(usize, usize)> {
-    let mut path = vec![start];
+    let mut path = vec![];
     let mut next = start;
     while let Some(nt) = random_direction_neighbour((next.0, next.1, 2, 2), grid, &mut path) {
         next = nt;
@@ -219,5 +236,6 @@ pub fn random_move(
     }
     path
 }
+
 
 /* ---------------------- */

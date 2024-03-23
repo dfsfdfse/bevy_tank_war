@@ -4,11 +4,11 @@ use bevy::prelude::*;
 
 use crate::{
     res::{
-        Block, Bullet, Clear, Colider, Enemy, GameDirection, GameMapCollection, GameState, Moving,
-        Player, UISelectInfo,
+        Bullet, Clear, Colider, Enemy, GameDirection, GameMapCollection, GameState, Moving, Player,
+        UISelectInfo,
     },
     utils::{
-        util::{a_star, path_to_move_direction, transform_to_pos},
+        util::{point_direction, random_move, transform_to_pos},
         widget::{sprite, sprite_root},
     },
 };
@@ -158,43 +158,35 @@ pub fn update_player(
 }
 //a星算法移动到home为目标的最短路径
 pub fn update_ui_enemy(
-    query_home: Query<(&Colider, &Transform), With<Block>>,
     mut query_enemy: Query<(&mut Player, &Transform, &mut Enemy)>,
     gm_map: Res<GameMapCollection>,
     select_info: Res<UISelectInfo>,
 ) {
-    for (colider, transform) in query_home.iter() {
-        if colider.index == 6 {
-            for (mut player, enemy_transform, mut enemy) in query_enemy.iter_mut() {
-                let mut search = false;
-                if let Some(start) = enemy.start_search_pos {
-                    if (enemy_transform.translation.x - start.0).abs() >= 24.
-                        || (enemy_transform.translation.y - start.1).abs() >= 24.
-                    {
-                        enemy.start_search_pos =
-                            Some((enemy_transform.translation.x, enemy_transform.translation.y));
-                        search = true;
-                    }
-                }
-                if enemy.start_search_pos.is_none() {
-                    enemy.start_search_pos =
-                        Some((enemy_transform.translation.x, enemy_transform.translation.y));
-                    search = true;
-                }
-                if search {
-                    let home_pos = transform_to_pos(transform);
-                    let enemy_pos = transform_to_pos(enemy_transform);
-                    if let Some(path) =
-                        a_star(&gm_map.maps[select_info.map_index].map, enemy_pos, home_pos)
-                    {
-                        if let Some(dir) = path_to_move_direction(path) {
-                            if player.direction_stack.is_empty() {
-                                player.direction_stack.push(dir);
-                            } else {
-                                player.direction_stack[0] = dir;
-                            }
-                        }
-                    }
+    for (mut player, transform, mut enemy) in query_enemy.iter_mut() {
+        if enemy.random_path.is_empty() {
+            enemy.random_path = random_move(
+                &gm_map.maps[select_info.map_index].map,
+                transform_to_pos(transform),
+                10,
+            );
+            enemy.random_path.reverse();
+        }
+        if let Some(_start) = enemy.start_path {
+            if (288. + transform.translation.x) % 24. == 0.
+                && (288. - transform.translation.y) % 24. == 0.
+            {
+                //完成一步移动
+                enemy.start_path = None;
+                player.direction_stack.clear();
+            }
+        }
+        if enemy.start_path.is_none() {
+            enemy.start_path = Some((transform.translation.x, transform.translation.y));
+            if let Some(path) = enemy.random_path.pop() {
+                if let Some(dir) = point_direction(transform_to_pos(transform), path) {
+                    player.direction_stack.push(dir);
+                } else {
+                    player.direction_stack.clear();
                 }
             }
         }

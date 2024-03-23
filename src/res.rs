@@ -93,7 +93,8 @@ pub enum EnemyState {
 }
 #[derive(Component, Clone, Default)]
 pub struct Enemy {
-    pub start_search_pos: Option<(f32, f32)>,
+    pub start_path: Option<(f32, f32)>,
+    pub random_path: Vec<(usize, usize)>,
 }
 
 #[derive(Component, Clone)]
