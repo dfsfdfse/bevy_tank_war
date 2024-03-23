@@ -15,7 +15,8 @@ use crate::{
         class::despawn_screen,
         editor::{setup_ui_editor, update_ui_editor, update_ui_editor_brush},
         game::{
-            setup_ui_game, update_bullet_boom, update_check_collision, update_ui_enemy, update_ui_game, update_ui_game_shoot
+            setup_ui_game, update_bullet_boom, update_check_collision, update_ui_enemy,
+            update_ui_game, update_ui_game_shoot,
         },
         menu::{setup_ui_menu, update_ui_menu},
         widget::{wd_update_collapse_grid, wd_update_node_block},
@@ -68,9 +69,9 @@ impl Plugin for GamePlugin {
                 Update,
                 (
                     update_ui_game,
-                    update_ui_enemy,
-                    update_ui_game_shoot,
+                    update_ui_enemy.after(update_check_collision),
                     update_check_collision,
+                    update_ui_game_shoot,
                     update_bullet_boom,
                 )
                     .run_if(in_state(GameState::UIGameEnter)),

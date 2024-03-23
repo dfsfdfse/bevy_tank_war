@@ -178,6 +178,7 @@ pub fn update_ui_enemy(
                 //完成一步移动
                 enemy.start_path = None;
                 player.direction_stack.clear();
+                println!("stop1");
             }
         }
         if enemy.start_path.is_none() {
@@ -185,8 +186,6 @@ pub fn update_ui_enemy(
             if let Some(path) = enemy.random_path.pop() {
                 if let Some(dir) = point_direction(transform_to_pos(transform), path) {
                     player.direction_stack.push(dir);
-                } else {
-                    player.direction_stack.clear();
                 }
             }
         }
